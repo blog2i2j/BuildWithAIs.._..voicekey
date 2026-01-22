@@ -50,6 +50,14 @@ export interface HistoryItem {
   duration?: number
 }
 
+export interface UpdateInfo {
+  hasUpdate: boolean
+  latestVersion: string
+  releaseUrl: string
+  releaseNotes: string
+  error?: string
+}
+
 // IPC 通道定义
 export const IPC_CHANNELS = {
   // 配置相关
@@ -81,6 +89,12 @@ export const IPC_CHANNELS = {
   HISTORY_GET: 'history:get',
   HISTORY_CLEAR: 'history:clear',
   HISTORY_DELETE: 'history:delete',
+
+  // 更新相关
+  CHECK_FOR_UPDATES: 'update:check',
+  GET_UPDATE_STATUS: 'update:get-status',
+  GET_APP_VERSION: 'app:version',
+  OPEN_EXTERNAL: 'app:open-external',
 } as const
 
 export type OverlayStatus = 'recording' | 'processing' | 'success' | 'error'
