@@ -65,7 +65,7 @@ export default function MainLayout({ children, currentRoute }: MainLayoutProps) 
           {/* 底部信息 */}
           <div className="p-4  border-t border-sidebar-border">
             <p className="text-xs text-muted-foreground">
-              {t('app.version', { version: '0.1.0', stage: 'MVP' })}
+              {t('app.version', { version: __APP_VERSION__ })}
             </p>
           </div>
         </aside>

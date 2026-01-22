@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Voice Key",
-    "version": "Version {{version}} {{stage}}"
+    "version": "Version {{version}}"
   },
   "nav": {
     "home": "Home",
@@ -51,6 +51,14 @@
   },
   "settings": {
     "title": "Settings",
+    "about": "About Voice Key",
+    "version": "Current Version: v{{version}}",
+    "checkUpdate": "Check for Updates",
+    "checkingUpdate": "Checking...",
+    "noUpdate": "You are up to date",
+    "hasUpdate": "New version available: v{{version}}",
+    "downloadUpdate": "Download Update",
+    "updateError": "Check failed",
     "appPreferences": "App Preferences",
     "appLanguage": "Interface language",
     "systemLanguage": "System default",

@@ -2,7 +2,7 @@
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { resolveLanguage, type LanguageSetting } from '@electron/shared/i18n'
-import type { AppConfig } from '@electron/shared/types'
+import type { AppConfig, UpdateInfo } from '@electron/shared/types'
 import { HotkeySettings } from '@/components/HotkeySettings'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -47,6 +47,7 @@ export default function SettingsPage() {
   } | null>(null)
   const [saving, setSaving] = useState(false)
   const hasLoadedConfig = useRef(false)
+  const hasLoadedUpdateStatus = useRef(false)
 
   useEffect(() => {
     if (hasLoadedConfig.current) return
@@ -173,9 +174,100 @@ export default function SettingsPage() {
   const currentRegion = config.asr.region || 'cn'
   const currentApiKey = config.asr.apiKeys?.[currentRegion] || ''
 
+  // Update Logic
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+
+  useEffect(() => {
+    if (hasLoadedUpdateStatus.current) return
+    hasLoadedUpdateStatus.current = true
+
+    const loadUpdateStatus = async () => {
+      try {
+        const info = await window.electronAPI.getUpdateStatus()
+        if (info) {
+          setUpdateInfo(info)
+        }
+      } catch (error) {
+        console.error('Failed to load update status:', error)
+      }
+    }
+
+    loadUpdateStatus()
+  }, [])
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true)
+    setUpdateInfo(null)
+    try {
+      const info = await window.electronAPI.checkForUpdates()
+      setUpdateInfo(info)
+    } catch (error) {
+      console.error('Update check failed:', error)
+      setUpdateInfo({
+        hasUpdate: false,
+        latestVersion: '',
+        releaseUrl: '',
+        releaseNotes: '',
+        error: 'failed',
+      })
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }
+
+  const handleOpenRelease = () => {
+    if (updateInfo?.releaseUrl) {
+      window.electronAPI.openExternal(updateInfo.releaseUrl)
+    }
+  }
+
   return (
     <div className="max-w-xl">
       <h1 className="text-2xl font-bold text-foreground mb-6">{t('settings.title')}</h1>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{t('settings.about')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">
+                {t('settings.version', { version: __APP_VERSION__ })}
+              </p>
+              {updateInfo?.hasUpdate && (
+                <p className="text-sm text-chart-2 font-medium">
+                  {t('settings.hasUpdate', { version: updateInfo.latestVersion })}
+                </p>
+              )}
+              {updateInfo?.hasUpdate === false && !updateInfo.error && (
+                <p className="text-sm text-muted-foreground">{t('settings.noUpdate')}</p>
+              )}
+              {updateInfo?.error && (
+                <p className="text-sm text-destructive">{t('settings.updateError')}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {updateInfo?.hasUpdate ? (
+                <Button size="sm" onClick={handleOpenRelease} className="cursor-pointer no-drag">
+                  {t('settings.downloadUpdate')}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCheckUpdate}
+                  disabled={checkingUpdate}
+                  className="cursor-pointer no-drag"
+                >
+                  {checkingUpdate ? t('settings.checkingUpdate') : t('settings.checkUpdate')}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="mb-6">
         <CardHeader>
