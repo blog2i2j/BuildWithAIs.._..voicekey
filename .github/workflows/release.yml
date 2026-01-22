@@ -112,7 +112,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mac-artifacts-${{ matrix.arch }}
-          path: release/**/*.dmg
+          path: release/*.dmg
           if-no-files-found: error
 
   # 3. 构建 Windows
@@ -141,7 +141,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: win-artifacts
-          path: release/**/*.exe
+          path: release/*Setup.exe
           if-no-files-found: error
 
   # 4. 发布 Release
@@ -166,9 +166,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare-release.outputs.new_tag }}
-          draft: true
+          draft: false
           prerelease: false
-          files: artifacts/**
+          files: |
+            artifacts/*.dmg
+            artifacts/*Setup.exe
           body: |
             ## 🎉 新版本发布！
 
