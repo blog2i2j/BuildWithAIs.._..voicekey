@@ -96,7 +96,8 @@ const configureTransports = () => {
   log.transports.file.format = '{y}-{m}-{d} {h}:{i}:{s}.{ms} [{level}] [{scope}] {text}'
   log.transports.console.level = false
 
-  log.transports.file.archiveLog = (filePath) => {
+  log.transports.file.archiveLog = (oldLogFile) => {
+    const filePath = oldLogFile.path
     const dir = path.dirname(filePath)
     const ext = path.extname(filePath)
     const base = path.basename(filePath, ext)
