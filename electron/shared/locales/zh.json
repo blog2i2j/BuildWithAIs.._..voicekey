@@ -153,7 +153,7 @@
     "recordCount_one": "共 {{formattedCount}} 条转录记录",
     "recordCount_other": "共 {{formattedCount}} 条转录记录",
     "empty": "暂无转录记录",
-    "autoSaveLimit": "自动保存最近 {{formattedCount}} 条",
+    "autoSaveLimit": "自动保存最近 {{formattedCount}} 天",
     "emptyTitleNone": "暂无转录记录",
     "emptyTitleNoMatch": "未找到匹配记录",
     "emptyDescNone": "当你使用语音输入时，内容会自动保存在这里。",

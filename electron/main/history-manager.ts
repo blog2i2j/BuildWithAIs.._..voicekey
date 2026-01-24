@@ -1,11 +1,12 @@
 import Store from 'electron-store'
+import { HISTORY_RETENTION_DAYS } from '../shared/constants'
 import { HistoryItem } from '../shared/types'
 
 interface HistorySchema {
   items: HistoryItem[]
 }
 
-const MAX_HISTORY_ITEMS = 1000
+const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 export class HistoryManager {
   private store: Store<HistorySchema>
@@ -20,11 +21,11 @@ export class HistoryManager {
   }
 
   getAll(): HistoryItem[] {
-    return this.store.get('items', [])
+    return this.pruneOldItems(this.store.get('items', []))
   }
 
   add(item: Omit<HistoryItem, 'id' | 'timestamp'>): HistoryItem {
-    const items = this.getAll()
+    const items = this.store.get('items', [])
     const newItem: HistoryItem = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now(),
@@ -32,12 +33,8 @@ export class HistoryManager {
     }
 
     items.unshift(newItem)
-
-    if (items.length > MAX_HISTORY_ITEMS) {
-      items.pop()
-    }
-
-    this.store.set('items', items)
+    const prunedItems = this.pruneOldItems(items, false)
+    this.store.set('items', prunedItems)
     return newItem
   }
 
@@ -59,6 +56,21 @@ export class HistoryManager {
 
   getCount(): number {
     return this.getAll().length
+  }
+
+  private pruneOldItems(items: HistoryItem[], persist = true): HistoryItem[] {
+    if (HISTORY_RETENTION_DAYS <= 0) {
+      return items
+    }
+
+    const cutoff = Date.now() - HISTORY_RETENTION_DAYS * MS_PER_DAY
+    const filteredItems = items.filter((item) => item.timestamp >= cutoff)
+
+    if (persist && filteredItems.length !== items.length) {
+      this.store.set('items', filteredItems)
+    }
+
+    return filteredItems
   }
 }
 
