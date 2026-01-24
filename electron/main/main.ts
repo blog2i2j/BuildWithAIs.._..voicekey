@@ -20,6 +20,7 @@ import { hotkeyManager } from './hotkey-manager'
 import { initMainI18n, setMainLanguage, t } from './i18n'
 import { ioHookManager } from './iohook-manager'
 import { textInjector } from './text-injector'
+import { UpdaterManager } from './updater-manager'
 import { IPC_CHANNELS, OverlayState, VoiceSession } from '../shared/types'
 // ES Module compatibility - 延迟导入 fluent-ffmpeg 避免启动时的 __dirname 错误
 let ffmpeg: any
@@ -805,6 +806,23 @@ function setupIPCHandlers() {
     showNotification(t('notification.errorTitle'), error)
     if (currentSession) currentSession.status = 'error'
   })
+
+  // 更新相关
+  ipcMain.handle(IPC_CHANNELS.CHECK_FOR_UPDATES, async () => {
+    return await UpdaterManager.checkForUpdates()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.GET_UPDATE_STATUS, () => {
+    return UpdaterManager.getLastUpdateInfo()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.GET_APP_VERSION, () => {
+    return app.getVersion()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.OPEN_EXTERNAL, (_event, url) => {
+    UpdaterManager.openReleasePage(url)
+  })
 }
 
 // 应用程序生命周期
@@ -821,6 +839,7 @@ app.whenReady().then(async () => {
   createMainWindow()
   createTray()
   setupIPCHandlers()
+  void UpdaterManager.checkForUpdates()
   registerGlobalHotkeys()
   ioHookManager.start()
 

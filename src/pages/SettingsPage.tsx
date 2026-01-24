@@ -2,7 +2,7 @@
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { resolveLanguage, type LanguageSetting } from '@electron/shared/i18n'
-import type { AppConfig } from '@electron/shared/types'
+import type { AppConfig, UpdateInfo } from '@electron/shared/types'
 import { HotkeySettings } from '@/components/HotkeySettings'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { validateHotkey } from '@/lib/hotkey-utils'
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation()
@@ -40,6 +41,8 @@ export default function SettingsPage() {
     },
   })
 
+  const [originalConfig, setOriginalConfig] = useState<AppConfig | null>(null)
+  const [isConfigLoading, setIsConfigLoading] = useState(true)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{
     type: 'success' | 'error'
@@ -47,6 +50,7 @@ export default function SettingsPage() {
   } | null>(null)
   const [saving, setSaving] = useState(false)
   const hasLoadedConfig = useRef(false)
+  const hasLoadedUpdateStatus = useRef(false)
 
   useEffect(() => {
     if (hasLoadedConfig.current) return
@@ -56,6 +60,7 @@ export default function SettingsPage() {
       try {
         const loadedConfig = await window.electronAPI.getConfig()
         setConfig(loadedConfig)
+        setOriginalConfig(loadedConfig)
         const resolvedLanguage = resolveLanguage(
           loadedConfig.app?.language ?? 'system',
           navigator.language,
@@ -63,6 +68,8 @@ export default function SettingsPage() {
         void i18n.changeLanguage(resolvedLanguage)
       } catch (error) {
         console.error('Failed to load config:', error)
+      } finally {
+        setIsConfigLoading(false)
       }
     }
 
@@ -78,6 +85,17 @@ export default function SettingsPage() {
         language: setting,
       },
     }))
+    setOriginalConfig((prev) =>
+      prev
+        ? {
+            ...prev,
+            app: {
+              ...prev.app,
+              language: setting,
+            },
+          }
+        : prev,
+    )
     const resolvedLanguage = resolveLanguage(setting, navigator.language)
     void i18n.changeLanguage(resolvedLanguage)
     void window.electronAPI.setConfig({ app: { language: setting } }).catch((error) => {
@@ -86,8 +104,21 @@ export default function SettingsPage() {
   }
 
   const handleSave = async () => {
-    setSaving(true)
     setTestResult(null)
+
+    const pttValidation = validateHotkey(config.hotkey.pttKey)
+    const settingsValidation = validateHotkey(config.hotkey.toggleSettings)
+
+    if (
+      !pttValidation.valid ||
+      !settingsValidation.valid ||
+      config.hotkey.pttKey === config.hotkey.toggleSettings
+    ) {
+      setTestResult({ type: 'error', message: t('settings.result.hotkeyInvalid') })
+      return
+    }
+
+    setSaving(true)
     try {
       const latestConfig = await window.electronAPI.getConfig()
 
@@ -95,8 +126,10 @@ export default function SettingsPage() {
         ...latestConfig,
         app: config.app,
         asr: config.asr,
+        hotkey: config.hotkey,
       })
 
+      setOriginalConfig(config)
       setTestResult({ type: 'success', message: t('settings.result.saveSuccess') })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t('common.unknownError')
@@ -173,9 +206,113 @@ export default function SettingsPage() {
   const currentRegion = config.asr.region || 'cn'
   const currentApiKey = config.asr.apiKeys?.[currentRegion] || ''
 
+  const isDirty =
+    !!originalConfig &&
+    (config.app.language !== originalConfig.app.language ||
+      (config.app.autoLaunch ?? false) !== (originalConfig.app.autoLaunch ?? false) ||
+      config.asr.provider !== originalConfig.asr.provider ||
+      config.asr.region !== originalConfig.asr.region ||
+      config.asr.endpoint !== originalConfig.asr.endpoint ||
+      config.asr.language !== originalConfig.asr.language ||
+      config.asr.apiKeys.cn !== originalConfig.asr.apiKeys.cn ||
+      config.asr.apiKeys.intl !== originalConfig.asr.apiKeys.intl ||
+      config.hotkey.pttKey !== originalConfig.hotkey.pttKey ||
+      config.hotkey.toggleSettings !== originalConfig.hotkey.toggleSettings)
+
+  // Update Logic
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+
+  useEffect(() => {
+    if (hasLoadedUpdateStatus.current) return
+    hasLoadedUpdateStatus.current = true
+
+    const loadUpdateStatus = async () => {
+      try {
+        const info = await window.electronAPI.getUpdateStatus()
+        if (info) {
+          setUpdateInfo(info)
+        }
+      } catch (error) {
+        console.error('Failed to load update status:', error)
+      }
+    }
+
+    loadUpdateStatus()
+  }, [])
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true)
+    setUpdateInfo(null)
+    try {
+      const info = await window.electronAPI.checkForUpdates()
+      setUpdateInfo(info)
+    } catch (error) {
+      console.error('Update check failed:', error)
+      setUpdateInfo({
+        hasUpdate: false,
+        latestVersion: '',
+        releaseUrl: '',
+        releaseNotes: '',
+        error: 'failed',
+      })
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }
+
+  const handleOpenRelease = () => {
+    if (updateInfo?.releaseUrl) {
+      window.electronAPI.openExternal(updateInfo.releaseUrl)
+    }
+  }
+
   return (
     <div className="max-w-xl">
       <h1 className="text-2xl font-bold text-foreground mb-6">{t('settings.title')}</h1>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{t('settings.about')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">
+                {t('settings.version', { version: __APP_VERSION__ })}
+              </p>
+              {updateInfo?.hasUpdate && (
+                <p className="text-sm text-chart-2 font-medium">
+                  {t('settings.hasUpdate', { version: updateInfo.latestVersion })}
+                </p>
+              )}
+              {updateInfo?.hasUpdate === false && !updateInfo.error && (
+                <p className="text-sm text-muted-foreground">{t('settings.noUpdate')}</p>
+              )}
+              {updateInfo?.error && (
+                <p className="text-sm text-destructive">{t('settings.updateError')}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {updateInfo?.hasUpdate ? (
+                <Button size="sm" onClick={handleOpenRelease} className="cursor-pointer no-drag">
+                  {t('settings.downloadUpdate')}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCheckUpdate}
+                  disabled={checkingUpdate}
+                  className="cursor-pointer no-drag"
+                >
+                  {checkingUpdate ? t('settings.checkingUpdate') : t('settings.checkUpdate')}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="mb-6">
         <CardHeader>
@@ -287,8 +424,20 @@ export default function SettingsPage() {
       </Card>
 
       <div className="mb-6">
-        <HotkeySettings />
+        <HotkeySettings
+          value={config.hotkey}
+          originalValue={originalConfig?.hotkey ?? null}
+          isLoading={isConfigLoading}
+          onChange={(hotkey) => setConfig((prev) => ({ ...prev, hotkey }))}
+        />
       </div>
+
+      {isDirty && (
+        <Alert className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{t('settings.saveNotice')}</AlertDescription>
+        </Alert>
+      )}
 
       {testResult && (
         <Alert variant={isSuccess ? 'default' : 'destructive'} className="mb-6">
@@ -312,7 +461,11 @@ export default function SettingsPage() {
         >
           {testing ? t('settings.testingConnection') : t('settings.testConnection')}
         </Button>
-        <Button onClick={handleSave} disabled={saving} className="no-drag flex-1 cursor-pointer">
+        <Button
+          onClick={handleSave}
+          disabled={saving || !isDirty}
+          className="no-drag flex-1 cursor-pointer"
+        >
           {saving ? t('settings.savingConfig') : t('settings.saveConfig')}
         </Button>
       </div>

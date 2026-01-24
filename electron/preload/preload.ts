@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
-import { IPC_CHANNELS, OverlayState, HistoryItem, AppConfig, ASRConfig } from '../shared/types'
+import {
+  IPC_CHANNELS,
+  OverlayState,
+  HistoryItem,
+  AppConfig,
+  ASRConfig,
+  UpdateInfo,
+} from '../shared/types'
 
 // 定义暴露给渲染进程的API接口
 export interface ElectronAPI {
@@ -41,6 +48,12 @@ export interface ElectronAPI {
 
   // Overlay mouse event handling
   setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => void
+
+  // 更新相关
+  checkForUpdates: () => Promise<UpdateInfo>
+  getUpdateStatus: () => Promise<UpdateInfo | null>
+  getAppVersion: () => Promise<string>
+  openExternal: (url: string) => Promise<void>
 }
 
 // 暴露安全的API到渲染进程
@@ -128,4 +141,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setIgnoreMouseEvents: (ignore: boolean, options?: { forward?: boolean }) => {
     ipcRenderer.send('set-ignore-mouse-events', ignore, options)
   },
+
+  // 更新相关
+  checkForUpdates: () => ipcRenderer.invoke(IPC_CHANNELS.CHECK_FOR_UPDATES),
+  getUpdateStatus: () => ipcRenderer.invoke(IPC_CHANNELS.GET_UPDATE_STATUS),
+  getAppVersion: () => ipcRenderer.invoke(IPC_CHANNELS.GET_APP_VERSION),
+  openExternal: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url),
 } as ElectronAPI)
