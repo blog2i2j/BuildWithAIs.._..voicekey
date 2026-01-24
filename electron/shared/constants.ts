@@ -22,3 +22,5 @@ export const AUDIO_CONFIG = {
   ENCODING: 'signed-integer',
   BIT_DEPTH: 16,
 } as const
+
+export const HISTORY_RETENTION_DAYS = 90
