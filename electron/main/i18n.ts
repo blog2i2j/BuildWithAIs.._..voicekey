@@ -10,10 +10,14 @@ import {
 import { IPC_CHANNELS, type LanguageSnapshot } from '../shared/types'
 
 let currentSetting: LanguageSetting = 'system'
+let lastSystemLocale = ''
+let lastResolvedLanguage = DEFAULT_LANGUAGE
 
 export const initMainI18n = async (setting?: LanguageSetting): Promise<void> => {
   currentSetting = setting ?? 'system'
-  const resolvedLanguage = resolveLanguage(currentSetting, app.getLocale())
+  lastSystemLocale = app.getLocale()
+  const resolvedLanguage = resolveLanguage(currentSetting, lastSystemLocale)
+  lastResolvedLanguage = resolvedLanguage
 
   await i18next.init({
     resources,
@@ -27,7 +31,9 @@ export const initMainI18n = async (setting?: LanguageSetting): Promise<void> => 
 
 export const setMainLanguage = async (setting: LanguageSetting): Promise<void> => {
   currentSetting = setting
-  const resolvedLanguage = resolveLanguage(currentSetting, app.getLocale())
+  lastSystemLocale = app.getLocale()
+  const resolvedLanguage = resolveLanguage(currentSetting, lastSystemLocale)
+  lastResolvedLanguage = resolvedLanguage
   await i18next.changeLanguage(resolvedLanguage)
 }
 
@@ -40,6 +46,27 @@ export const getMainLanguageSnapshot = (): LanguageSnapshot => {
     resolved,
     locale: getLocale(resolved),
   }
+}
+
+export const syncSystemLocaleIfNeeded = async (): Promise<boolean> => {
+  if (currentSetting !== 'system') {
+    return false
+  }
+
+  const systemLocale = app.getLocale()
+  if (!systemLocale || systemLocale === lastSystemLocale) {
+    return false
+  }
+
+  lastSystemLocale = systemLocale
+  const resolvedLanguage = resolveLanguage(currentSetting, systemLocale)
+  if (resolvedLanguage === lastResolvedLanguage) {
+    return false
+  }
+
+  lastResolvedLanguage = resolvedLanguage
+  await i18next.changeLanguage(resolvedLanguage)
+  return true
 }
 
 export const sendLanguageSnapshotToWindow = (window: BrowserWindow): void => {

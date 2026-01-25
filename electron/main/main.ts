@@ -8,7 +8,13 @@ import { hotkeyManager } from './hotkey-manager' // 待整理
 import { ioHookManager } from './iohook-manager' // 待整理
 import { registerGlobalHotkeys } from './hotkey'
 // i18n 模块
-import { initMainI18n, sendLanguageSnapshotToWindow, t } from './i18n'
+import {
+  broadcastLanguageSnapshot,
+  initMainI18n,
+  sendLanguageSnapshotToWindow,
+  syncSystemLocaleIfNeeded,
+  t,
+} from './i18n'
 // 初始化日志
 import { initializeLogger } from './logger'
 // 文本注入
@@ -77,6 +83,20 @@ app.whenReady().then(async () => {
   // 初始化
   const appConfig = configManager.getAppConfig()
   await initMainI18n(appConfig.language)
+
+  // 同步系统语言
+  const syncSystemLocale = async () => {
+    const changed = await syncSystemLocaleIfNeeded()
+    if (changed) {
+      broadcastLanguageSnapshot()
+      refreshLocalizedUi()
+    }
+  }
+
+  // Follow system language changes when setting === 'system'
+  app.on('browser-window-focus', () => {
+    void syncSystemLocale()
+  })
 
   app.on('browser-window-created', (_event, window) => {
     window.webContents.on('did-finish-load', () => {
