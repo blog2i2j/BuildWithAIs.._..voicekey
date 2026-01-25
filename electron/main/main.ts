@@ -1,18 +1,8 @@
-﻿import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  Notification,
-  Tray,
-  Menu,
-  nativeImage,
-  shell,
-  screen,
-} from 'electron'
+﻿import { app, BrowserWindow, ipcMain, Notification, Tray, Menu, nativeImage, shell } from 'electron'
 import fs from 'fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+// import { fileURLToPath } from 'node:url'
 import { UiohookKey } from 'uiohook-napi'
 import { ASRProvider } from './asr-provider'
 import { configManager } from './config-manager'
@@ -28,13 +18,27 @@ import {
   IPC_CHANNELS,
   type LogEntryPayload,
   type LogTailOptions,
-  type OverlayState,
   type VoiceSession,
 } from '../shared/types'
 
-import { createBackgroundWindow, getBackgroundWindow } from '@electron/main/window/index'
+import {
+  createBackgroundWindow,
+  getBackgroundWindow,
+  // Overlay 模块
+  showOverlay,
+  hideOverlay,
+  updateOverlay,
+  showErrorAndHide,
+  sendAudioLevel,
+  setOverlayIgnoreMouseEvents,
+  // Settings 模块
+  createSettingsWindow,
+  getSettingsWindow,
+  updateSettingsWindowTitle,
+  focusSettingsWindow,
+} from './window/index'
 
-import { initEnv, VITE_DEV_SERVER_URL, getRendererDist, getVitePublic } from './env'
+import { initEnv, VITE_DEV_SERVER_URL, getVitePublic } from './env'
 // ES Module compatibility - 延迟导入 fluent-ffmpeg 避免启动时的 __dirname 错误
 let ffmpeg: any
 let ffmpegInitialized = false
@@ -67,140 +71,10 @@ function initializeFfmpeg() {
   }
 }
 
-// const require = createRequire(import.meta.url)
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
 // 全局变量
-let settingsWindow: BrowserWindow | null = null
-let overlayWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let asrProvider: ASRProvider | null = null
 let currentSession: VoiceSession | null = null
-
-// 创建设置窗口
-function createSettingsWindow() {
-  if (settingsWindow) {
-    settingsWindow.focus()
-    return
-  }
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize
-  settingsWindow = new BrowserWindow({
-    width,
-    height,
-    minWidth: 600,
-    minHeight: 500,
-    title: t('window.settingsTitle'),
-    titleBarStyle: 'hiddenInset', // macOS 风格：隐藏标题栏但保留交通灯按钮
-    trafficLightPosition: { x: 20, y: 20 }, // 交通灯按钮位置
-    vibrancy: 'sidebar', // macOS 毛玻璃效果（可选）
-    backgroundColor: '#00000000', // 透明背景
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
-  })
-
-  if (VITE_DEV_SERVER_URL) {
-    settingsWindow.loadURL(`${VITE_DEV_SERVER_URL}#/settings`)
-    // 开发模式下打开 DevTools
-    settingsWindow.webContents.openDevTools({ mode: 'detach' })
-  } else {
-    settingsWindow.loadFile(path.join(getRendererDist(), 'index.html'), {
-      hash: '/settings',
-    })
-  }
-
-  settingsWindow.on('closed', () => {
-    settingsWindow = null
-  })
-}
-
-// 创建录音状态浮窗 (透明、无边框、置顶)
-function createOverlayWindow() {
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    return overlayWindow
-  }
-
-  const primaryDisplay = screen.getPrimaryDisplay()
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
-
-  const overlayWidth = 200
-  const overlayHeight = 60
-  const bottomMargin = 60
-
-  overlayWindow = new BrowserWindow({
-    width: overlayWidth,
-    height: overlayHeight,
-    x: Math.round((screenWidth - overlayWidth) / 2),
-    y: screenHeight - overlayHeight - bottomMargin,
-    frame: false,
-    transparent: true,
-    backgroundColor: '#00000000',
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    resizable: false,
-    movable: false,
-    focusable: false,
-    hasShadow: false,
-    show: false,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
-  })
-
-  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-  overlayWindow.setIgnoreMouseEvents(true, { forward: true })
-
-  if (VITE_DEV_SERVER_URL) {
-    overlayWindow.loadURL(`${VITE_DEV_SERVER_URL}#/overlay`)
-  } else {
-    overlayWindow.loadFile(path.join(getRendererDist(), 'index.html'), {
-      hash: '/overlay',
-    })
-  }
-
-  overlayWindow.on('closed', () => {
-    overlayWindow = null
-  })
-
-  return overlayWindow
-}
-
-// 显示/隐藏/更新浮窗状态
-function showOverlay(state: OverlayState) {
-  console.log(`[Main] 🔵 showOverlay:`, JSON.stringify(state))
-  console.log(`[Main] 🔵 showOverlay called from:`, new Error().stack?.split('\n')[2])
-  const win = createOverlayWindow()
-  win.webContents.send(IPC_CHANNELS.OVERLAY_UPDATE, state)
-  win.showInactive()
-}
-
-function hideOverlay() {
-  console.log(`[Main] 🔵 hideOverlay`)
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.hide()
-  }
-}
-
-// 统一错误处理：显示错误状态并自动关闭 HUD
-function showErrorAndHide(message: string, hideDelay = 2000) {
-  console.log(`[Main] 🔴 showErrorAndHide: ${message}`)
-  updateOverlay({ status: 'error', message })
-  setTimeout(() => hideOverlay(), hideDelay)
-}
-
-function updateOverlay(state: OverlayState) {
-  console.log(`[Main] 🔵 updateOverlay:`, JSON.stringify(state))
-  if (state.status === 'error') {
-    console.log(`[Main] 🔴 ERROR state sent! Stack:`, new Error().stack)
-  }
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.webContents.send(IPC_CHANNELS.OVERLAY_UPDATE, state)
-  }
-}
 
 // 设置开机自启
 function updateAutoLaunchState(enable: boolean) {
@@ -234,10 +108,7 @@ const refreshLocalizedUi = () => {
     tray.setToolTip(t('tray.tooltip'))
     tray.setContextMenu(buildTrayMenu())
   }
-
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.setTitle(t('window.settingsTitle'))
-  }
+  updateSettingsWindowTitle()
 }
 
 function createTray() {
@@ -818,16 +689,23 @@ function setupIPCHandlers() {
   })
 
   ipcMain.on(IPC_CHANNELS.OVERLAY_AUDIO_LEVEL, (_event, level: number) => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.webContents.send(IPC_CHANNELS.OVERLAY_AUDIO_LEVEL, level)
-    }
+    // if (overlayWindow && !overlayWindow.isDestroyed()) {
+    //   overlayWindow.webContents.send(IPC_CHANNELS.OVERLAY_AUDIO_LEVEL, level)
+    // }
+    sendAudioLevel(level)
   })
 
-  ipcMain.on('set-ignore-mouse-events', (_event, ignore: boolean, options?: any) => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setIgnoreMouseEvents(ignore, options)
-    }
-  })
+  // ipcMain.on('set-ignore-mouse-events', (_event, ignore: boolean, options?: any) => {
+  //   if (overlayWindow && !overlayWindow.isDestroyed()) {
+  //     overlayWindow.setIgnoreMouseEvents(ignore, options)
+  //   }
+  // })
+  ipcMain.on(
+    'set-ignore-mouse-events',
+    (_event, ignore: boolean, options?: { forward?: boolean }) => {
+      setOverlayIgnoreMouseEvents(ignore, options)
+    },
+  )
 
   ipcMain.on('error', (_event, error) => {
     console.error('[Main] 🔴 Renderer Error received:', error)
@@ -870,7 +748,6 @@ app.whenReady().then(async () => {
   await initMainI18n(appConfig.language)
   updateAutoLaunchState(appConfig.autoLaunch ?? false)
   initializeASRProvider()
-  // createMainWindow()
   createBackgroundWindow()
   createTray()
   setupIPCHandlers()
@@ -913,9 +790,10 @@ app.on('before-quit', () => {
 
 app.on('activate', () => {
   // macOS: 点击 Dock 图标时打开设置窗口
-  if (BrowserWindow.getAllWindows().length === 0 || !settingsWindow) {
+  const settingsWin = getSettingsWindow()
+  if (BrowserWindow.getAllWindows().length === 0 || !settingsWin) {
     createSettingsWindow()
-  } else if (settingsWindow) {
-    settingsWindow.focus()
+  } else {
+    focusSettingsWindow()
   }
 })
