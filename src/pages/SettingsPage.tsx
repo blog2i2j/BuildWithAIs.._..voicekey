@@ -1,7 +1,7 @@
 ﻿import { useEffect, useRef, useState } from 'react'
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { resolveLanguage, type LanguageSetting } from '@electron/shared/i18n'
+import { type LanguageSetting } from '@electron/shared/i18n'
 import { LOG_FILE_MAX_SIZE_MB, LOG_RETENTION_DAYS } from '@electron/shared/constants'
 import type { AppConfig, UpdateInfo } from '@electron/shared/types'
 import { LogViewerDialog } from '@/components/LogViewerDialog'
@@ -22,7 +22,7 @@ import { Switch } from '@/components/ui/switch'
 import { validateHotkey } from '@/lib/hotkey-utils'
 
 export default function SettingsPage() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [config, setConfig] = useState<AppConfig>({
     app: {
       language: 'system',
@@ -64,11 +64,6 @@ export default function SettingsPage() {
         const loadedConfig = await window.electronAPI.getConfig()
         setConfig(loadedConfig)
         setOriginalConfig(loadedConfig)
-        const resolvedLanguage = resolveLanguage(
-          loadedConfig.app?.language ?? 'system',
-          navigator.language,
-        )
-        void i18n.changeLanguage(resolvedLanguage)
       } catch (error) {
         console.error('Failed to load config:', error)
       } finally {
@@ -77,7 +72,7 @@ export default function SettingsPage() {
     }
 
     loadConfig()
-  }, [i18n])
+  }, [])
 
   const handleAppLanguageChange = (value: string) => {
     const setting = value as LanguageSetting
@@ -99,8 +94,6 @@ export default function SettingsPage() {
           }
         : prev,
     )
-    const resolvedLanguage = resolveLanguage(setting, navigator.language)
-    void i18n.changeLanguage(resolvedLanguage)
     void window.electronAPI.setConfig({ app: { language: setting } }).catch((error) => {
       console.error('Failed to persist app language:', error)
     })

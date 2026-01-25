@@ -1,26 +1,18 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import {
-  DEFAULT_LANGUAGE,
-  resolveLanguage,
-  resources,
-  type LanguageSetting,
-} from '@electron/shared/i18n'
+import { DEFAULT_LANGUAGE, resources } from '@electron/shared/i18n'
+import type { LanguageSnapshot } from '@electron/shared/types'
 
 export const initI18n = async (): Promise<void> => {
-  let languageSetting: LanguageSetting = 'system'
+  let snapshot: LanguageSnapshot | null = null
 
   try {
-    const config = await window.electronAPI?.getConfig?.()
-    if (config?.app?.language) {
-      languageSetting = config.app.language
-    }
+    snapshot = await window.electronAPI?.getAppLanguage?.()
   } catch (error) {
-    console.warn('[i18n] Failed to load config, using system language.', error)
+    console.warn('[i18n] Failed to load language snapshot, using default.', error)
   }
 
-  const systemLanguage = typeof navigator !== 'undefined' ? navigator.language : DEFAULT_LANGUAGE
-  const resolvedLanguage = resolveLanguage(languageSetting, systemLanguage)
+  const resolvedLanguage = snapshot?.resolved ?? DEFAULT_LANGUAGE
 
   await i18n.use(initReactI18next).init({
     resources,
@@ -30,6 +22,10 @@ export const initI18n = async (): Promise<void> => {
       escapeValue: false,
     },
   })
+
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = resolvedLanguage
+  }
 }
 
 export default i18n

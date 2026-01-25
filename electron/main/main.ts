@@ -8,7 +8,7 @@ import { hotkeyManager } from './hotkey-manager' // 待整理
 import { ioHookManager } from './iohook-manager' // 待整理
 import { registerGlobalHotkeys } from './hotkey'
 // i18n 模块
-import { initMainI18n, t } from './i18n'
+import { initMainI18n, sendLanguageSnapshotToWindow, t } from './i18n'
 // 初始化日志
 import { initializeLogger } from './logger'
 // 文本注入
@@ -77,6 +77,12 @@ app.whenReady().then(async () => {
   // 初始化
   const appConfig = configManager.getAppConfig()
   await initMainI18n(appConfig.language)
+
+  app.on('browser-window-created', (_event, window) => {
+    window.webContents.on('did-finish-load', () => {
+      sendLanguageSnapshotToWindow(window)
+    })
+  })
   // 设置开机自启
   updateAutoLaunchState(appConfig.autoLaunch ?? false)
   // 初始化ASR Provider

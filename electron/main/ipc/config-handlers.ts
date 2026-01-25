@@ -17,7 +17,7 @@ import {
   type HotkeyConfig,
 } from '../../shared/types'
 import { configManager } from '../config-manager'
-import { setMainLanguage } from '../i18n'
+import { broadcastLanguageSnapshot, getMainLanguageSnapshot, setMainLanguage } from '../i18n'
 import { ASRProvider } from '../asr-provider'
 import { hotkeyManager } from '../hotkey-manager'
 import { ioHookManager } from '../iohook-manager'
@@ -58,6 +58,11 @@ export function registerConfigHandlers(): void {
     return configManager.getConfig()
   })
 
+  // APP_LANGUAGE_GET: 获取语言快照
+  ipcMain.handle(IPC_CHANNELS.APP_LANGUAGE_GET, () => {
+    return getMainLanguageSnapshot()
+  })
+
   // CONFIG_SET: 设置配置（支持部分更新）
   ipcMain.handle(
     IPC_CHANNELS.CONFIG_SET,
@@ -76,6 +81,7 @@ export function registerConfigHandlers(): void {
         }
         if (config.app.language) {
           await setMainLanguage(config.app.language)
+          broadcastLanguageSnapshot()
         }
         deps.refreshLocalizedUi()
       }
