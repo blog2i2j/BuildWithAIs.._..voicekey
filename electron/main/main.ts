@@ -1,16 +1,27 @@
-﻿import { app, BrowserWindow, Notification, Menu, nativeImage } from 'electron'
+﻿import { app, BrowserWindow, Menu, nativeImage } from 'electron'
 import path from 'node:path'
 import { ASRProvider } from './asr-provider'
+// 配置管理模块
 import { configManager } from './config-manager'
+// 快捷键模块
 import { hotkeyManager } from './hotkey-manager' // 待整理
 import { ioHookManager } from './iohook-manager' // 待整理
 import { registerGlobalHotkeys } from './hotkey'
+// i18n 模块
 import { initMainI18n, t } from './i18n'
+// 初始化日志
 import { initializeLogger } from './logger'
+// 文本注入
 import { textInjector } from './text-injector'
+// 更新管理
 import { UpdaterManager } from './updater-manager'
+// 托盘管理
 import { createTray, refreshLocalizedUi } from './tray'
 
+// 通知模块
+import { showNotification } from './notification'
+
+// 窗口模块
 import {
   createBackgroundWindow,
   // Settings 模块
@@ -18,7 +29,10 @@ import {
   getSettingsWindow,
   focusSettingsWindow,
 } from './window/index'
+
+// IPC 模块
 import { initIPCHandlers, registerAllIPCHandlers } from './ipc'
+// Audio 模块
 import {
   // Session Manager
   handleStartRecording,
@@ -30,7 +44,7 @@ import {
   // Processor
   initProcessor,
 } from './audio'
-
+// 环境模块
 import { initEnv, VITE_DEV_SERVER_URL } from './env'
 // 全局变量
 let asrProvider: ASRProvider | null = null
@@ -50,16 +64,6 @@ function updateAutoLaunchState(enable: boolean) {
 function initializeASRProvider() {
   const config = configManager.getASRConfig()
   asrProvider = new ASRProvider(config)
-}
-
-// 显示系统通知
-function showNotification(title: string, body: string) {
-  if (Notification.isSupported()) {
-    new Notification({
-      title,
-      body,
-    }).show()
-  }
 }
 
 // 应用程序生命周期
