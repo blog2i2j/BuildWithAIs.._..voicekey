@@ -77,16 +77,20 @@ app.whenReady().then(async () => {
   // 初始化
   const appConfig = configManager.getAppConfig()
   await initMainI18n(appConfig.language)
+  // 设置开机自启
   updateAutoLaunchState(appConfig.autoLaunch ?? false)
+  // 初始化ASR Provider
   initializeASRProvider()
+  // 创建后台窗口
   createBackgroundWindow()
+  // 创建托盘
   createTray()
   // 初始化音频处理器（需要 ASR Provider 依赖）
   initProcessor({
     getAsrProvider: () => asrProvider,
     initializeASRProvider,
   })
-  // 初始化 IPC 处理器依赖
+  // 初始化 IPC 处理器依赖 必须在 registerAllIPCHandlers 之前
   initIPCHandlers({
     // config-handlers 依赖
     config: {
@@ -115,8 +119,11 @@ app.whenReady().then(async () => {
     },
   })
   registerAllIPCHandlers()
+  // 检查更新
   void UpdaterManager.checkForUpdates()
+  // 注册全局快捷键
   registerGlobalHotkeys()
+  // 启动 ioHook
   ioHookManager.start()
 
   // 设置 Dock 图标和应用名称（macOS）
@@ -126,8 +133,12 @@ app.whenReady().then(async () => {
     app.dock.setIcon(nativeImage.createFromPath(dockIconPath))
   }
 
-  // 开发环境下自动打开设置窗口
-  if (VITE_DEV_SERVER_URL) {
+  // 启动时窗口策略：
+  // 1. 开发环境：总是打开
+  // 2. 生产环境：如果是用户手动启动（非隐藏启动），则打开
+  // isHiddenLaunch: macOS 上通过 setLoginItemSettings({ openAsHidden: true }) 启动时为 true
+  const isHiddenLaunch = app.getLoginItemSettings().wasOpenedAsHidden
+  if (VITE_DEV_SERVER_URL || !isHiddenLaunch) {
     createSettingsWindow()
   }
 
