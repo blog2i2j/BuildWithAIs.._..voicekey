@@ -1,6 +1,6 @@
 // 跨进程共享的类型定义
 
-import type { LanguageSetting } from './i18n'
+import type { AppLanguage, LanguageSetting } from './i18n'
 
 export interface VoiceSession {
   id: string
@@ -35,6 +35,12 @@ export interface HotkeyConfig {
 export interface AppPreferences {
   language: LanguageSetting
   autoLaunch?: boolean
+}
+
+export interface LanguageSnapshot {
+  setting: LanguageSetting
+  resolved: AppLanguage
+  locale: string
 }
 
 export interface AppConfig {
@@ -77,6 +83,8 @@ export const IPC_CHANNELS = {
   CONFIG_GET: 'config:get',
   CONFIG_SET: 'config:set',
   CONFIG_TEST: 'config:test',
+  APP_LANGUAGE_GET: 'app:language:get',
+  APP_LANGUAGE_CHANGED: 'app:language:changed',
 
   // 录音会话相关
   SESSION_START: 'session:start',

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { Toaster } from '@/components/ui/sonner'
 import { initRendererLogger } from '@/lib/logger'
 import App from './App.tsx'
-import { initI18n } from './i18n'
+import i18n, { initI18n } from './i18n'
 import './index.css'
 
 initRendererLogger()
@@ -21,6 +21,15 @@ initI18n()
         <Toaster />
       </React.StrictMode>,
     )
+
+    if (window.electronAPI?.onAppLanguageChanged) {
+      window.electronAPI.onAppLanguageChanged((snapshot) => {
+        void i18n.changeLanguage(snapshot.resolved)
+        if (typeof document !== 'undefined') {
+          document.documentElement.lang = snapshot.resolved
+        }
+      })
+    }
   })
 
 // Use contextBridge

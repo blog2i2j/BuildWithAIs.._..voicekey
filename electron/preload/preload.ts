@@ -8,6 +8,7 @@ import {
   type UpdateInfo,
   type LogEntryPayload,
   type LogTailOptions,
+  type LanguageSnapshot,
 } from '../shared/types'
 
 // 定义暴露给渲染进程的API接口
@@ -19,6 +20,8 @@ export interface ElectronAPI {
   getConfig: () => Promise<AppConfig>
   setConfig: (config: Partial<AppConfig>) => Promise<void>
   testConnection: (config?: ASRConfig) => Promise<boolean>
+  getAppLanguage: () => Promise<LanguageSnapshot>
+  onAppLanguageChanged: (callback: (snapshot: LanguageSnapshot) => void) => () => void
 
   // 录音会话相关
   startSession: () => Promise<void>
@@ -75,6 +78,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getConfig: () => ipcRenderer.invoke(IPC_CHANNELS.CONFIG_GET),
   setConfig: (config: Partial<AppConfig>) => ipcRenderer.invoke(IPC_CHANNELS.CONFIG_SET, config),
   testConnection: (config?: ASRConfig) => ipcRenderer.invoke(IPC_CHANNELS.CONFIG_TEST, config),
+  getAppLanguage: () => ipcRenderer.invoke(IPC_CHANNELS.APP_LANGUAGE_GET),
+  onAppLanguageChanged: (callback: (snapshot: LanguageSnapshot) => void) => {
+    const listener = (_event: IpcRendererEvent, snapshot: LanguageSnapshot) => callback(snapshot)
+    ipcRenderer.on(IPC_CHANNELS.APP_LANGUAGE_CHANGED, listener)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.APP_LANGUAGE_CHANGED, listener)
+  },
 
   // 录音会话相关
   startSession: () => ipcRenderer.invoke(IPC_CHANNELS.SESSION_START),
