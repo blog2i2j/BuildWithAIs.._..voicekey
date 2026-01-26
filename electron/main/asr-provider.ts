@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { type AxiosResponse } from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
 import { createHash } from 'node:crypto'
@@ -15,6 +15,25 @@ export interface TranscriptionResult {
 export interface TranscriptionError {
   code: string
   message: string
+}
+
+type AsrResponseData = {
+  text?: string
+  id?: string
+  created?: number
+  model?: string
+  x_groq?: {
+    id?: string
+  }
+}
+
+type TranscribeOptions = {
+  audioFilePath: string
+  endpoint: string
+  apiKey: string
+  providerLabel: string
+  formFields: Record<string, string | undefined>
+  mapResult: (data: AsrResponseData, text: string) => TranscriptionResult
 }
 
 export class ASRProvider {
@@ -51,9 +70,109 @@ export class ASRProvider {
     }
   }
 
-  private async transcribeGlm(audioFilePath: string): Promise<TranscriptionResult> {
-    const transcribeStartTime = Date.now()
+  private buildFormData(
+    audioFilePath: string,
+    fields: Record<string, string | undefined>,
+  ): FormData {
+    const formDataStartTime = Date.now()
+    const formData = new FormData()
+    formData.append('file', fs.createReadStream(audioFilePath))
+    Object.entries(fields).forEach(([key, value]) => {
+      if (value !== undefined) {
+        formData.append(key, value)
+      }
+    })
+    const formDataDuration = Date.now() - formDataStartTime
+    console.log(`[ASR] ⏱️  FormData preparation took ${formDataDuration}ms`)
+    return formData
+  }
 
+  private async makeAsrRequest(
+    endpoint: string,
+    apiKey: string,
+    formData: FormData,
+    providerLabel: string,
+  ): Promise<AxiosResponse<AsrResponseData>> {
+    const requestStartTime = Date.now()
+    console.log(
+      `[ASR] [${new Date().toISOString()}] Sending POST request to ASR API (${providerLabel})...`,
+    )
+    console.log(`[ASR] Endpoint: ${endpoint}`)
+
+    const response = await axios.post(endpoint, formData, {
+      headers: {
+        ...formData.getHeaders(),
+        Authorization: `Bearer ${apiKey}`,
+      },
+      timeout: 60000,
+      responseType: 'json',
+      responseEncoding: 'utf8',
+    })
+    const requestDuration = Date.now() - requestStartTime
+    console.log(`[ASR] [${new Date().toISOString()}] API response received`)
+    console.log(`[ASR] ⏱️  API network request took ${requestDuration}ms`)
+
+    return response
+  }
+
+  private validateAndLogResponse(
+    response: AxiosResponse<AsrResponseData>,
+    transcribeStartTime: number,
+  ): string {
+    if (!response.data || !response.data.text) {
+      throw new Error('Invalid response from ASR service')
+    }
+
+    const receivedText = response.data.text
+    const textHash = createHash('sha256').update(receivedText, 'utf8').digest('hex')
+    console.log('[ASR] Text length:', receivedText.length)
+    console.log('[ASR] Text hash (sha256):', textHash)
+
+    const totalDuration = Date.now() - transcribeStartTime
+    console.log(`[ASR] ⏱️  Total transcribe() call took ${totalDuration}ms`)
+
+    return receivedText
+  }
+
+  private handleTranscriptionError(error: unknown, transcribeStartTime: number): never {
+    const errorDuration = Date.now() - transcribeStartTime
+    console.error(`[ASR] Transcription failed after ${errorDuration}ms`)
+    if (axios.isAxiosError(error)) {
+      const responseData = error.response?.data
+      const errorPayload =
+        responseData && typeof responseData === 'object' && 'error' in responseData
+          ? (responseData as { error?: { message?: string; code?: string } }).error
+          : undefined
+      if (errorPayload) {
+        const errorMessage = errorPayload.message || errorPayload.code || 'Unknown error'
+        throw new Error(`ASR Error: ${errorMessage}`)
+      }
+      throw new Error(`Network Error: ${error.message}`)
+    }
+    throw error
+  }
+
+  private async transcribeWithProvider(options: TranscribeOptions): Promise<TranscriptionResult> {
+    const transcribeStartTime = Date.now()
+    this.ensureAudioFileExists(options.audioFilePath)
+
+    try {
+      const formData = this.buildFormData(options.audioFilePath, options.formFields)
+      const response = await this.makeAsrRequest(
+        options.endpoint,
+        options.apiKey,
+        formData,
+        options.providerLabel,
+      )
+      const receivedText = this.validateAndLogResponse(response, transcribeStartTime)
+
+      return options.mapResult(response.data, receivedText)
+    } catch (error) {
+      return this.handleTranscriptionError(error, transcribeStartTime)
+    }
+  }
+
+  private async transcribeGlm(audioFilePath: string): Promise<TranscriptionResult> {
     const region = this.config.region || 'cn'
     const apiKey = this.config.apiKeys[region]
 
@@ -61,149 +180,53 @@ export class ASRProvider {
       throw new Error(`API Key not configured for region: ${region}`)
     }
 
-    let endpoint = this.config.endpoint
-    if (!endpoint) {
-      endpoint = region === 'intl' ? GLM_ASR.ENDPOINT_INTL : GLM_ASR.ENDPOINT
-    }
+    const endpoint =
+      this.config.endpoint || (region === 'intl' ? GLM_ASR.ENDPOINT_INTL : GLM_ASR.ENDPOINT)
 
-    this.ensureAudioFileExists(audioFilePath)
-
-    try {
-      const formDataStartTime = Date.now()
-      const formData = new FormData()
-      formData.append('file', fs.createReadStream(audioFilePath))
-      formData.append('model', GLM_ASR.MODEL)
-      formData.append('stream', 'false')
-
-      if (this.config.language) {
-        formData.append('language', this.config.language)
-      }
-      const formDataDuration = Date.now() - formDataStartTime
-      console.log(`[ASR] ⏱️  FormData preparation took ${formDataDuration}ms`)
-
-      const requestStartTime = Date.now()
-      console.log(
-        `[ASR] [${new Date().toISOString()}] Sending POST request to ASR API (GLM/${region})...`,
-      )
-      console.log(`[ASR] Endpoint: ${endpoint}`)
-
-      const response = await axios.post(endpoint, formData, {
-        headers: {
-          ...formData.getHeaders(),
-          Authorization: `Bearer ${apiKey}`,
-        },
-        timeout: 60000,
-        responseType: 'json',
-        responseEncoding: 'utf8',
-      })
-      const requestDuration = Date.now() - requestStartTime
-      console.log(`[ASR] [${new Date().toISOString()}] API response received`)
-      console.log(`[ASR] ⏱️  API network request took ${requestDuration}ms`)
-
-      if (!response.data || !response.data.text) {
-        throw new Error('Invalid response from ASR service')
-      }
-
-      const receivedText = response.data.text
-      const textHash = createHash('sha256').update(receivedText, 'utf8').digest('hex')
-      console.log('[ASR] Text length:', receivedText.length)
-      console.log('[ASR] Text hash (sha256):', textHash)
-
-      const totalDuration = Date.now() - transcribeStartTime
-      console.log(`[ASR] ⏱️  Total transcribe() call took ${totalDuration}ms`)
-
-      return {
-        text: receivedText,
-        id: response.data.id || '',
-        created: response.data.created || Date.now(),
-        model: response.data.model || GLM_ASR.MODEL,
-      }
-    } catch (error: any) {
-      const errorDuration = Date.now() - transcribeStartTime
-      console.error(`[ASR] Transcription failed after ${errorDuration}ms`)
-      if (axios.isAxiosError(error)) {
-        const errorData = error.response?.data?.error
-        if (errorData) {
-          throw new Error(`ASR Error: ${errorData.message || errorData.code || 'Unknown error'}`)
-        }
-        throw new Error(`Network Error: ${error.message}`)
-      }
-      throw error
-    }
+    return this.transcribeWithProvider({
+      audioFilePath,
+      endpoint,
+      apiKey,
+      providerLabel: `GLM/${region}`,
+      formFields: {
+        model: GLM_ASR.MODEL,
+        stream: 'false',
+        language: this.config.language || undefined,
+      },
+      mapResult: (data, text) => ({
+        text,
+        id: data.id || '',
+        created: data.created || Date.now(),
+        model: data.model || GLM_ASR.MODEL,
+      }),
+    })
   }
 
   private async transcribeGroq(audioFilePath: string): Promise<TranscriptionResult> {
-    const transcribeStartTime = Date.now()
     const apiKey = this.config.groqApiKey
 
     if (!apiKey) {
       throw new Error('Groq API Key not configured')
     }
 
-    this.ensureAudioFileExists(audioFilePath)
-
-    try {
-      const formDataStartTime = Date.now()
-      const formData = new FormData()
-      formData.append('file', fs.createReadStream(audioFilePath))
-      formData.append('model', GROQ_ASR.MODEL)
-      formData.append('temperature', '0')
-      formData.append('response_format', 'json')
-
-      if (this.config.language) {
-        formData.append('language', this.config.language)
-      }
-
-      const formDataDuration = Date.now() - formDataStartTime
-      console.log(`[ASR] ⏱️  FormData preparation took ${formDataDuration}ms`)
-
-      const requestStartTime = Date.now()
-      console.log(`[ASR] [${new Date().toISOString()}] Sending POST request to ASR API (Groq)...`)
-      console.log(`[ASR] Endpoint: ${GROQ_ASR.ENDPOINT}`)
-
-      const response = await axios.post(GROQ_ASR.ENDPOINT, formData, {
-        headers: {
-          ...formData.getHeaders(),
-          Authorization: `Bearer ${apiKey}`,
-        },
-        timeout: 60000,
-        responseType: 'json',
-        responseEncoding: 'utf8',
-      })
-      const requestDuration = Date.now() - requestStartTime
-      console.log(`[ASR] [${new Date().toISOString()}] API response received`)
-      console.log(`[ASR] ⏱️  API network request took ${requestDuration}ms`)
-
-      if (!response.data || !response.data.text) {
-        throw new Error('Invalid response from ASR service')
-      }
-
-      const receivedText = response.data.text
-      const textHash = createHash('sha256').update(receivedText, 'utf8').digest('hex')
-      console.log('[ASR] Text length:', receivedText.length)
-      console.log('[ASR] Text hash (sha256):', textHash)
-
-      const totalDuration = Date.now() - transcribeStartTime
-      console.log(`[ASR] ⏱️  Total transcribe() call took ${totalDuration}ms`)
-
-      return {
-        text: receivedText,
-        id: response.data.x_groq?.id || response.data.id || '',
-        created: response.data.created || Date.now(),
-        model: response.data.model || GROQ_ASR.MODEL,
-      }
-    } catch (error: any) {
-      const errorDuration = Date.now() - transcribeStartTime
-      console.error(`[ASR] Transcription failed after ${errorDuration}ms`)
-      if (axios.isAxiosError(error)) {
-        const errorData = error.response?.data?.error
-        if (errorData) {
-          throw new Error(`ASR Error: ${errorData.message || errorData.code || 'Unknown error'}`)
-        }
-        throw new Error(`Network Error: ${error.message}`)
-      }
-      throw error
-    }
+    return this.transcribeWithProvider({
+      audioFilePath,
+      endpoint: GROQ_ASR.ENDPOINT,
+      apiKey,
+      providerLabel: 'Groq',
+      formFields: {
+        model: GROQ_ASR.MODEL,
+        temperature: '0',
+        response_format: 'json',
+        language: this.config.language || undefined,
+      },
+      mapResult: (data, text) => ({
+        text,
+        id: data.x_groq?.id || data.id || '',
+        created: data.created || Date.now(),
+        model: data.model || GROQ_ASR.MODEL,
+      }),
+    })
   }
 
   private async testGlmConnection(): Promise<boolean> {

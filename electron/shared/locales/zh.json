@@ -99,6 +99,8 @@
       "saveSuccess": "设置已保存！",
       "saveError": "保存失败：{{message}}",
       "apiKeyRequired": "请先输入 API Key",
+      "groqApiKeyRequired": "请输入 Groq API Key",
+      "glmApiKeyRequired": "请输入 GLM API Key",
       "connectionSuccess": "连接成功！",
       "connectionFailed": "连接失败，请检查 API Key。",
       "testFailed": "测试失败：{{message}}",

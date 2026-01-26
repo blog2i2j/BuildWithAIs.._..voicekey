@@ -100,10 +100,35 @@ export class ConfigManager {
     return config
   }
 
+  private hasValidAsrCredentials(config: ASRConfig): boolean {
+    if (config.provider === 'groq') {
+      return !!config.groqApiKey?.trim()
+    }
+    const region = config.region || 'cn'
+    return !!config.apiKeys?.[region]?.trim()
+  }
+
+  private assertAsrConfigValid(config: ASRConfig): void {
+    if (config.provider === 'groq') {
+      if (!this.hasValidAsrCredentials(config)) {
+        throw new Error('Groq API Key is required when using Groq provider')
+      }
+      return
+    }
+
+    const region = config.region || 'cn'
+    const key = config.apiKeys?.[region]?.trim()
+    if (!key) {
+      throw new Error(`GLM API Key is required for region: ${region}`)
+    }
+  }
+
   // 设置ASR配置
   setASRConfig(config: Partial<ASRConfig>): void {
     const current = this.getASRConfig()
-    this.store.set('asr', { ...current, ...config })
+    const updated = { ...current, ...config }
+    this.assertAsrConfigValid(updated)
+    this.store.set('asr', updated)
   }
 
   // 获取快捷键配置
@@ -125,12 +150,7 @@ export class ConfigManager {
   // 检查配置是否有效
   isValid(): boolean {
     const asr = this.getASRConfig()
-    if (asr.provider === 'groq') {
-      return !!asr.groqApiKey && asr.groqApiKey.length > 0
-    }
-    const region = asr.region || 'cn'
-    const key = asr.apiKeys?.[region]
-    return !!key && key.length > 0
+    return this.hasValidAsrCredentials(asr)
   }
 }
 

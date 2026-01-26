@@ -101,6 +101,24 @@ export default function SettingsPage() {
     })
   }
 
+  const getAsrValidationError = () => {
+    const provider = config.asr.provider || 'glm'
+    if (provider === 'groq') {
+      const apiKey = config.asr.groqApiKey?.trim()
+      if (!apiKey) {
+        return t('settings.result.groqApiKeyRequired')
+      }
+      return null
+    }
+
+    const region = config.asr.region || 'cn'
+    const apiKey = config.asr.apiKeys?.[region]?.trim()
+    if (!apiKey) {
+      return t('settings.result.glmApiKeyRequired')
+    }
+    return null
+  }
+
   const handleSave = async () => {
     setTestResult(null)
 
@@ -113,6 +131,12 @@ export default function SettingsPage() {
       config.hotkey.pttKey === config.hotkey.toggleSettings
     ) {
       setTestResult({ type: 'error', message: t('settings.result.hotkeyInvalid') })
+      return
+    }
+
+    const asrValidationError = getAsrValidationError()
+    if (asrValidationError) {
+      setTestResult({ type: 'error', message: asrValidationError })
       return
     }
 
@@ -143,7 +167,8 @@ export default function SettingsPage() {
   const handleTestConnection = async () => {
     const provider = config.asr.provider || 'glm'
     const region = config.asr.region || 'cn'
-    const apiKey = provider === 'groq' ? config.asr.groqApiKey : config.asr.apiKeys[region]
+    const apiKey =
+      provider === 'groq' ? config.asr.groqApiKey?.trim() : config.asr.apiKeys[region]?.trim()
 
     if (!apiKey) {
       setTestResult({ type: 'error', message: t('settings.result.apiKeyRequired') })
@@ -228,7 +253,7 @@ export default function SettingsPage() {
   const currentRegion = config.asr.region || 'cn'
   const glmApiKey = config.asr.apiKeys?.[currentRegion] || ''
   const groqApiKey = config.asr.groqApiKey || ''
-  const currentApiKey = currentProvider === 'groq' ? groqApiKey : glmApiKey
+  const currentApiKey = (currentProvider === 'groq' ? groqApiKey : glmApiKey).trim()
   const pricingInfo =
     currentProvider === 'groq'
       ? {
