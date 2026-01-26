@@ -62,7 +62,9 @@ export function registerSessionHandlers(): void {
 
   // AUDIO_DATA: 接收音频数据（来自渲染进程）
   ipcMain.on(IPC_CHANNELS.AUDIO_DATA, (_event, buffer) => {
-    deps.handleAudioData(Buffer.from(buffer))
+    void deps.handleAudioData(Buffer.from(buffer)).catch((error) => {
+      console.error('[IPC:Session] Audio data processing failed:', error)
+    })
   })
 
   // CANCEL_SESSION: 取消当前会话
