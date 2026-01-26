@@ -14,211 +14,209 @@ import {
   Zap,
   Monitor,
   LayoutTemplate,
+  Terminal,
+  Cpu,
+  Command,
 } from 'lucide-react'
 import LanguageSwitch from '@components/LanguageSwitch.astro'
 
 const title = 'Voice Key - Voice to Text, One Key to Input'
 const description =
   'Press hotkey to speak, release to type anywhere. Voice Key is a cross-platform app (macOS & Windows) that converts your voice to text instantly.'
+
+// Feature data
+const features = [
+  {
+    icon: Keyboard,
+    title: 'Push-to-Talk',
+    desc: 'Hold hotkey to speak, release to input. Zero latency workflow.',
+  },
+  {
+    icon: Globe,
+    title: 'Multi-language',
+    desc: 'Support Chinese, English and more. Auto-detect context.',
+  },
+  {
+    icon: Shield,
+    title: 'Privacy First',
+    desc: 'Local-first architecture. Your voice data stays on your device.',
+  },
+  {
+    icon: Zap,
+    title: 'Lightning Fast',
+    desc: 'Sub-second recognition. Type faster than you can think.',
+  },
+  {
+    icon: Monitor,
+    title: 'Cross Platform',
+    desc: 'Native support for macOS & Windows. Consistent experience.',
+  },
+  {
+    icon: LayoutTemplate,
+    title: 'Modern HUD',
+    desc: 'Non-intrusive floating overlay. Visual feedback for recording.',
+  },
+]
 ---
 
 <BaseLayout title={title} description={description} lang="en">
   <!-- Hero Section -->
   <section
-    class="relative min-h-screen flex items-center justify-center overflow-hidden"
+    class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-32"
   >
     <LanguageSwitch lang="en" />
-    
-    <!-- 背景光效 -->
+
+    <!-- Ambient Glow -->
     <div
-      class="absolute inset-0 bg-linear-to-r from-primary/20 via-primary/10 to-accent/20 blur-3xl opacity-50"
+      class="absolute inset-0 bg-linear-to-b from-primary/5 via-transparent to-transparent blur-3xl opacity-30 pointer-events-none"
     >
     </div>
 
-    <div class="relative z-10 text-center px-6 max-w-4xl mx-auto">
-      <!-- Logo -->
-      <div class="mb-8 flex justify-center">
+    <div class="relative z-10 text-center px-6 max-w-5xl mx-auto flex flex-col items-center">
+      <!-- Version Tag (Geek Style) -->
+      <div
+        class="inline-flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-1 font-mono text-xs text-muted-foreground mb-8 backdrop-blur-md animate-fade-in hover:border-primary/50 transition-colors cursor-default"
+      >
+        <span class="relative flex h-2 w-2">
+          <span
+            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"
+          ></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"
+          ></span>
+        </span>
+        v0.1.6
+        <span class="w-px h-3 bg-border mx-1"></span>
+        <span class="text-foreground">Stable Build</span>
+      </div>
+
+      <!-- Hero Content -->
+      <div class="mb-10 relative group">
+        <!-- Orange Glow Effect -->
         <div
-          class="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl animate-fade-in overflow-hidden bg-background"
+          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-primary/20 blur-[40px] rounded-full group-hover:bg-primary/30 transition-all duration-700"
+        >
+        </div>
+        
+        <div
+          class="relative w-36 h-36 rounded-[22px] flex items-center justify-center bg-background/50 backdrop-blur-sm ring-1 ring-white/10 shadow-2xl overflow-hidden"
         >
           <Image
             src={logoImage}
             alt="Voice Key Logo"
             width={96}
             height={96}
-            class="w-full h-full object-cover"
+            class="w-24 h-24 object-cover"
           />
         </div>
       </div>
 
-      <!-- 标题 -->
       <h1
-        class="text-5xl md:text-7xl font-bold mb-6 text-foreground animate-fade-in tracking-tight"
+        class="text-5xl md:text-7xl font-bold mb-6 text-foreground animate-fade-in tracking-tighter"
       >
         Voice Key
       </h1>
 
-      <!-- 副标题 -->
       <p
-        class="text-xl md:text-2xl text-muted-foreground mb-8 animate-slide-up"
+        class="text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl animate-slide-up leading-relaxed"
       >
-        Voice to text, one key to input.<br />
-        <span class="text-foreground/80"
-          >Press hotkey to speak, release to type anywhere.</span
+        Voice to text, one key to input.
+        <br />
+        <span class="text-foreground/80 font-medium"
+          >Press hotkey to speak. Release to type.</span
         >
       </p>
 
-      <!-- CTA 按钮 -->
+      <!-- CLI / Action Buttons (Geek Style: rounded-md, font-mono) -->
       <div
-        class="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up"
+        class="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up w-full sm:w-auto"
       >
         <a
           href="https://github.com/BuildWithAIs/voicekey/releases/latest"
-          class="px-8 py-4 bg-primary text-primary-foreground rounded-full text-lg font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg hover:shadow-primary/25"
+          class="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-md bg-primary px-8 py-4 font-mono text-sm font-bold text-primary-foreground shadow-lg transition-all hover:bg-primary/90 hover:shadow-primary/25 hover:scale-[1.02]"
         >
-          <Download className="w-6 h-6" />
-          Download App
+          <Download className="w-5 h-5" />
+          <span>Download App</span>
+          <div
+            class="absolute inset-0 -z-10 bg-linear-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"
+          >
+          </div>
         </a>
+
         <a
           href="https://github.com/BuildWithAIs/voicekey"
-          class="px-8 py-4 border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full text-lg font-semibold transition-colors flex items-center justify-center gap-2"
+          class="inline-flex items-center justify-center gap-3 rounded-md border border-border bg-background/50 px-8 py-4 font-mono text-sm font-medium text-foreground backdrop-blur-sm transition-all hover:bg-muted hover:border-primary/50"
         >
-          <Github className="w-6 h-6" />
-          View on GitHub
+          <Github className="w-5 h-5" />
+          <span>Source Code</span>
         </a>
       </div>
-
-      <!-- 版本信息 -->
-      <p class="mt-8 text-sm text-muted-foreground">
-        Latest: v0.1.6 · macOS & Windows Supported
-      </p>
-    </div>
-  </section>
-
-  <!-- Features Section -->
-  <section class="py-24 px-6 bg-muted/30">
-    <div class="max-w-6xl mx-auto">
-      <h2
-        class="text-3xl md:text-4xl font-bold text-center mb-16 text-foreground"
-      >
-        Why Voice Key?
-      </h2>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <!-- Feature 1 -->
-        <div
-          class="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors shadow-xs group"
-        >
-          <div
-            class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors"
-          >
-            <Keyboard className="w-6 h-6 text-primary" />
-          </div>
-          <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Push-to-Talk
-          </h3>
-          <p class="text-muted-foreground">
-            Hold the hotkey while speaking, release to input. Simple and
-            intuitive.
-          </p>
-        </div>
-
-        <!-- Feature 2 -->
-        <div
-          class="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors shadow-xs group"
-        >
-          <div
-            class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors"
-          >
-            <Globe className="w-6 h-6 text-primary" />
-          </div>
-          <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Multi-language
-          </h3>
-          <p class="text-muted-foreground">
-            Support Chinese, English and more languages. Switch anytime.
-          </p>
-        </div>
-
-        <!-- Feature 3 -->
-        <div
-          class="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors shadow-xs group"
-        >
-          <div
-            class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors"
-          >
-            <Shield className="w-6 h-6 text-primary" />
-          </div>
-          <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Privacy First
-          </h3>
-          <p class="text-muted-foreground">
-            Audio processed locally. Your voice never leaves your device.
-          </p>
-        </div>
-
-        <!-- Feature 4 -->
-        <div
-          class="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors shadow-xs group"
-        >
-          <div
-            class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors"
-          >
-            <Zap className="w-6 h-6 text-primary" />
-          </div>
-          <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Lightning Fast
-          </h3>
-          <p class="text-muted-foreground">
-            Sub-second recognition. Type faster than you can type.
-          </p>
-        </div>
-
-        <!-- Feature 5 -->
-        <div
-          class="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors shadow-xs group"
-        >
-          <div
-            class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors"
-          >
-            <Monitor className="w-6 h-6 text-primary" />
-          </div>
-          <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Works Everywhere
-          </h3>
-          <p class="text-muted-foreground">
-            Input to any app - browsers, editors, chat apps, you name it.
-          </p>
-        </div>
-
-        <!-- Feature 6 -->
-        <div
-          class="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors shadow-xs group"
-        >
-          <div
-            class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors"
-          >
-            <LayoutTemplate className="w-6 h-6 text-primary" />
-          </div>
-          <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Beautiful HUD
-          </h3>
-          <p class="text-muted-foreground">
-            Elegant floating overlay shows recording status in real-time.
-          </p>
-        </div>
+      
+      <!-- OS Support Badges -->
+      <div class="mt-8 flex gap-4 text-xs font-mono text-muted-foreground opacity-60">
+        <span class="flex items-center gap-1.5"><Command className="w-3 h-3"/> macOS (Universal)</span>
+        <span class="flex items-center gap-1.5"><Monitor className="w-3 h-3"/> Windows (x64)</span>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="py-12 px-6 border-t border-border bg-background">
-    <div class="max-w-6xl mx-auto text-center text-muted-foreground">
-      <p class="mb-4">© 2026 Voice Key. All rights reserved.</p>
-      <div class="flex justify-center gap-6">
+  <!-- Features Grid (Geek Style: Borders, Grid, Mono) -->
+  <section class="py-24 px-6 relative border-t border-border">
+    <div
+      class="absolute inset-0 bg-muted/20 bg-[radial-gradient(#80808012_1px,transparent_1px)] bg-[size:20px_20px]"
+    >
+    </div>
+    
+    <div class="max-w-6xl mx-auto relative z-10">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold text-foreground mb-4 tracking-tight">
+          System Capabilities
+        </h2>
+        <p class="font-mono text-xs text-primary/80 uppercase tracking-widest">
+          // Core Modules Loaded
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {
+          features.map((feature) => (
+            <div class="group relative overflow-hidden rounded-lg border border-border bg-card/30 backdrop-blur-sm p-6 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+              <!-- Corner Accents -->
+              <div class="absolute top-0 left-0 w-2 h-2 border-l border-t border-primary/30 group-hover:border-primary/80 transition-colors"></div>
+              <div class="absolute top-0 right-0 w-2 h-2 border-r border-t border-primary/30 group-hover:border-primary/80 transition-colors"></div>
+              <div class="absolute bottom-0 left-0 w-2 h-2 border-l border-b border-primary/30 group-hover:border-primary/80 transition-colors"></div>
+              <div class="absolute bottom-0 right-0 w-2 h-2 border-r border-b border-primary/30 group-hover:border-primary/80 transition-colors"></div>
+
+              <div class="mb-5 inline-flex items-center justify-center rounded bg-primary/10 p-2.5 text-primary ring-1 ring-inset ring-primary/20 group-hover:scale-110 transition-transform duration-300">
+                <feature.icon className="w-6 h-6" />
+              </div>
+              
+              <h3 class="font-mono text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+                {feature.title}
+              </h3>
+              <p class="text-sm text-muted-foreground leading-relaxed">
+                {feature.desc}
+              </p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer (Minimalist) -->
+  <footer class="py-12 px-6 border-t border-border bg-background relative z-10">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-muted-foreground font-mono">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+        <span>System Operational</span>
+      </div>
+      
+      <p>© 2026 Voice Key Open Source Project</p>
+      
+      <div class="flex gap-6">
         <a
           href="https://github.com/BuildWithAIs/voicekey"
-          class="hover:text-foreground transition-colors"
+          class="hover:text-primary transition-colors"
         >
           GitHub
         </a>
