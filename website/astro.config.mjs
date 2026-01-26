@@ -6,7 +6,7 @@ import react from '@astrojs/react'
 // https://astro.build/config
 export default defineConfig({
   // GitHub Pages 部署配置
-  site: 'https://buildwithaIs.github.io',
+  site: 'https://BuildWithAIs.github.io',
   base: '/voicekey',
 
   // 输出模式：静态生成

@@ -38,8 +38,10 @@ jobs:
 
       - name: Install dependencies
         working-directory: website
-        # 使用 ci 安装确保 lockfile 一致性
         run: npm ci
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - name: Build website
         working-directory: website
