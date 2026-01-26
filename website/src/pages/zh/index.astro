@@ -1,10 +1,10 @@
 ---
 /**
- * Voice Key 官网首页（英文）
+ * Voice Key 官网首页（中文）
  */
 import { Image } from 'astro:assets'
 import BaseLayout from '@layouts/BaseLayout.astro'
-import logoImage from '../assets/logo.png'
+import logoImage from '../../assets/logo.png'
 import {
   Download,
   Github,
@@ -17,18 +17,17 @@ import {
 } from 'lucide-react'
 import LanguageSwitch from '@components/LanguageSwitch.astro'
 
-const title = 'Voice Key - Voice to Text, One Key to Input'
-const description =
-  'Press hotkey to speak, release to type anywhere. Voice Key is a cross-platform app (macOS & Windows) that converts your voice to text instantly.'
+const title = 'Voice Key - 语音转文字，一键输入'
+const description = '按住热键说话，松手即输入到任意应用。Voice Key 是一款跨平台应用（支持 macOS 与 Windows），专注于快速语音转文字转换。'
 ---
 
-<BaseLayout title={title} description={description} lang="en">
+<BaseLayout title={title} description={description} lang="zh">
   <!-- Hero Section -->
   <section
     class="relative min-h-screen flex items-center justify-center overflow-hidden"
   >
-    <LanguageSwitch lang="en" />
-    
+    <LanguageSwitch lang="zh" />
+
     <!-- 背景光效 -->
     <div
       class="absolute inset-0 bg-linear-to-r from-primary/20 via-primary/10 to-accent/20 blur-3xl opacity-50"
@@ -62,9 +61,9 @@ const description =
       <p
         class="text-xl md:text-2xl text-muted-foreground mb-8 animate-slide-up"
       >
-        Voice to text, one key to input.<br />
+        语音转文字，一键输入<br />
         <span class="text-foreground/80"
-          >Press hotkey to speak, release to type anywhere.</span
+          >按住热键说话，松手即输入到任意应用</span
         >
       </p>
 
@@ -77,20 +76,20 @@ const description =
           class="px-8 py-4 bg-primary text-primary-foreground rounded-full text-lg font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg hover:shadow-primary/25"
         >
           <Download className="w-6 h-6" />
-          Download App
+          免费下载
         </a>
         <a
           href="https://github.com/BuildWithAIs/voicekey"
           class="px-8 py-4 border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full text-lg font-semibold transition-colors flex items-center justify-center gap-2"
         >
           <Github className="w-6 h-6" />
-          View on GitHub
+          查看 GitHub
         </a>
       </div>
 
       <!-- 版本信息 -->
       <p class="mt-8 text-sm text-muted-foreground">
-        Latest: v0.1.6 · macOS & Windows Supported
+        最新版: v0.1.6 · 支持 macOS 与 Windows
       </p>
     </div>
   </section>
@@ -101,7 +100,7 @@ const description =
       <h2
         class="text-3xl md:text-4xl font-bold text-center mb-16 text-foreground"
       >
-        Why Voice Key?
+        为什么选择 Voice Key？
       </h2>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -115,11 +114,10 @@ const description =
             <Keyboard className="w-6 h-6 text-primary" />
           </div>
           <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Push-to-Talk
+            按住说话 (PTT)
           </h3>
           <p class="text-muted-foreground">
-            Hold the hotkey while speaking, release to input. Simple and
-            intuitive.
+            按住热键说话，松开即输入。简单直观，无需等待。
           </p>
         </div>
 
@@ -133,10 +131,10 @@ const description =
             <Globe className="w-6 h-6 text-primary" />
           </div>
           <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Multi-language
+            多语言支持
           </h3>
           <p class="text-muted-foreground">
-            Support Chinese, English and more languages. Switch anytime.
+            支持中文、英文等多种语言。随时切换，自由表达。
           </p>
         </div>
 
@@ -150,10 +148,10 @@ const description =
             <Shield className="w-6 h-6 text-primary" />
           </div>
           <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Privacy First
+            隐私优先
           </h3>
           <p class="text-muted-foreground">
-            Audio processed locally. Your voice never leaves your device.
+            仅本地处理（未来版本）。您的声音数据仅在必要时传输，安全可控。
           </p>
         </div>
 
@@ -167,10 +165,10 @@ const description =
             <Zap className="w-6 h-6 text-primary" />
           </div>
           <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Lightning Fast
+            极速识别
           </h3>
           <p class="text-muted-foreground">
-            Sub-second recognition. Type faster than you can type.
+            亚秒级响应速度。比打字更快，让思路不被打断。
           </p>
         </div>
 
@@ -184,10 +182,10 @@ const description =
             <Monitor className="w-6 h-6 text-primary" />
           </div>
           <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Works Everywhere
+            全场景适用
           </h3>
           <p class="text-muted-foreground">
-            Input to any app - browsers, editors, chat apps, you name it.
+            支持所有应用输入 - 浏览器、编辑器、聊天软件，无处不在。
           </p>
         </div>
 
@@ -201,10 +199,10 @@ const description =
             <LayoutTemplate className="w-6 h-6 text-primary" />
           </div>
           <h3 class="text-xl font-semibold mb-2 text-card-foreground">
-            Beautiful HUD
+            精美 HUD
           </h3>
           <p class="text-muted-foreground">
-            Elegant floating overlay shows recording status in real-time.
+            优雅的悬浮提示窗，实时显示录音状态，不打扰当前工作。
           </p>
         </div>
       </div>
@@ -214,18 +212,18 @@ const description =
   <!-- Footer -->
   <footer class="py-12 px-6 border-t border-border bg-background">
     <div class="max-w-6xl mx-auto text-center text-muted-foreground">
-      <p class="mb-4">© 2026 Voice Key. All rights reserved.</p>
+      <p class="mb-4">© 2026 Voice Key. 保留所有权利。</p>
       <div class="flex justify-center gap-6">
         <a
           href="https://github.com/BuildWithAIs/voicekey"
           class="hover:text-foreground transition-colors"
         >
-          GitHub
+          Github
         </a>
         <a href="/privacy" class="hover:text-foreground transition-colors">
-          Privacy
+          隐私政策
         </a>
-        <a href="/terms" class="hover:text-foreground transition-colors"> Terms </a>
+        <a href="/terms" class="hover:text-foreground transition-colors"> 使用条款 </a>
       </div>
     </div>
   </footer>
