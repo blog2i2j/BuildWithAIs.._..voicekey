@@ -48,6 +48,7 @@
         <li><a href="#dev-installation">安装步骤</a></li>
       </ul>
     </li>
+    <li><a href="#testing">测试</a></li>
     <li><a href="#prerequisites">配置要求</a></li>
     <li><a href="#installation">macOS 安装指南</a></li>
     <li><a href="#license">开源协议</a></li>
@@ -104,6 +105,13 @@
 5. 在应用设置中填入你的 API Key
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## 测试 <a id="testing"></a>
+
+测试集成方案与配置示例详见 `temp-docs/testing/integration-guide.md`，核心配置文件为
+`vitest.config.ts` 与 `playwright.config.ts`。渲染/主进程测试设置位于 `test/`，
+E2E 用例位于 `e2e/`。
+Vitest 默认忽略 `website/` 目录（官网项目不参与测试与覆盖率）。
 
 ## 配置要求 <a id="prerequisites"></a>
 
