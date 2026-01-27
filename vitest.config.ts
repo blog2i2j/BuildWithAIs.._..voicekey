@@ -37,6 +37,7 @@ export default defineConfig({
         '**/*.config.{ts,js}',
         '**/mockData',
         'src/components/ui/**',
+        'electron/shared/locales/**',
       ],
       thresholds: {
         lines: 80,
