@@ -10,3 +10,5 @@
 - `updater-manager.test.ts` - 更新检查、版本比较与 release URL 清洗测试。
 - `hotkey-manager.test.ts` - 全局快捷键注册/注销与重复注册防护测试。
 - `logger.test.ts` - 日志初始化、写入分流与尾部读取测试。
+- `main.test.ts` - 应用启动流程、事件监听与退出清理测试。
+- `env.test.ts` - 环境变量初始化与路径 getter 测试。
