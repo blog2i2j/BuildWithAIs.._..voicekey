@@ -1,6 +1,18 @@
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const baseExclude = [
+  'node_modules',
+  'dist',
+  'dist-electron',
+  '.idea',
+  '.git',
+  '.cache',
+  'website/**',
+]
 
 export default defineConfig({
   plugins: [react()] as any,
@@ -11,24 +23,7 @@ export default defineConfig({
     },
   },
   test: {
-    name: 'renderer',
     globals: false,
-    environment: 'happy-dom',
-    setupFiles: ['./test/setup.renderer.ts'],
-    include: ['src/**/__tests__/**/*.{test,spec}.{ts,tsx}', 'src/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', 'dist', 'dist-electron', '.idea', '.git', '.cache', 'website/**'],
-    projects: [
-      {
-        extends: true,
-        test: {
-          name: 'main',
-          environment: 'node',
-          setupFiles: ['./test/setup.main.ts'],
-          include: ['electron/**/__tests__/**/*.{test,spec}.ts', 'electron/**/*.{test,spec}.ts'],
-          exclude: ['src/**'],
-        },
-      },
-    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
@@ -37,7 +32,7 @@ export default defineConfig({
         'dist/',
         'dist-electron/',
         'website/**',
-        'test/',
+        'test/**',
         '**/*.d.ts',
         '**/*.config.{ts,js}',
         '**/mockData',
@@ -55,5 +50,37 @@ export default defineConfig({
     maxWorkers: 4,
     mockReset: true,
     restoreMocks: true,
+    projects: [
+      {
+        test: {
+          name: 'renderer',
+          environment: 'happy-dom',
+          setupFiles: ['./test/setup.renderer.ts'],
+          include: ['src/**/__tests__/**/*.{test,spec}.{ts,tsx}', 'src/**/*.{test,spec}.{ts,tsx}'],
+          exclude: baseExclude,
+        },
+        resolve: {
+          alias: {
+            '@': path.resolve(__dirname, './src'),
+            '@electron': path.resolve(__dirname, './electron'),
+          },
+        },
+      },
+      {
+        test: {
+          name: 'main',
+          environment: 'node',
+          setupFiles: ['./test/setup.main.ts'],
+          include: ['electron/**/__tests__/**/*.{test,spec}.ts', 'electron/**/*.{test,spec}.ts'],
+          exclude: [...baseExclude, 'src/**'],
+        },
+        resolve: {
+          alias: {
+            '@': path.resolve(__dirname, './src'),
+            '@electron': path.resolve(__dirname, './electron'),
+          },
+        },
+      },
+    ],
   },
 })
