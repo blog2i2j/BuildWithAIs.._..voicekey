@@ -11,3 +11,4 @@
 - `log-handlers.ts` - 日志尾部读取、写入、打开目录。
 - `updater-handlers.ts` - 更新检查、获取版本与打开发布页。
 - `overlay-handlers.ts` - 浮窗音频电平与鼠标穿透控制。
+- `__tests__/` - IPC 处理器测试。
