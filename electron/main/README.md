@@ -21,3 +21,4 @@ Electron 主进程目录，负责窗口管理、IPC、录音流程、ASR 调用�
 - `window/` - 背景、设置与浮窗窗口管理。
 - `notification/` - 系统通知封装。
 - `ipc/` - IPC 处理器模块（配置、会话、历史、日志、更新、浮窗）。
+- `__tests__/` - 主进程模块测试（config-manager 等）。

@@ -11,11 +11,8 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
-    environmentMatchGlobs: [
-      ['src/**', 'jsdom'],
-      ['electron/**', 'node'],
-    ],
+    environment: 'happy-dom',
+    environmentMatchGlobs: [['electron/**', 'node']],
     setupFiles: ['./test/setup.renderer.ts', './test/setup.main.ts'],
     globals: false,
     include: ['**/__tests__/**/*.{test,spec}.{ts,tsx}', '**/*.{test,spec}.{ts,tsx}'],
