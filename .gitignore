@@ -28,6 +28,11 @@ release/*
 
 temp-docs/
 
+# Test coverage and reports
+coverage/
+playwright-report/
+test-results/
+
 # Website (官网子项目)
 website/node_modules/
 website/dist/
