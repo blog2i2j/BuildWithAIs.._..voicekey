@@ -91,7 +91,7 @@ describe('overlay-handlers', () => {
     const { initOverlayHandlers, registerOverlayHandlers } = await import('../overlay-handlers')
     initOverlayHandlers({
       showNotification,
-      getCurrentSession: vi.fn(() => ({ status: 'recording' })),
+      getCurrentSession: vi.fn(() => ({ status: 'recording' }) as any),
       setSessionError,
     })
     registerOverlayHandlers()

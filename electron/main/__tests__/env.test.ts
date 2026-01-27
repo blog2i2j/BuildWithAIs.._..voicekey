@@ -27,8 +27,18 @@ describe('env', () => {
 
   const restoreEnv = () => {
     process.env.VITE_DEV_SERVER_URL = snapshot.VITE_DEV_SERVER_URL
-    process.env.VITE_PUBLIC = snapshot.VITE_PUBLIC
-    process.env.APP_ROOT = snapshot.APP_ROOT
+
+    if (snapshot.VITE_PUBLIC !== undefined) {
+      process.env.VITE_PUBLIC = snapshot.VITE_PUBLIC
+    } else {
+      delete (process.env as Partial<NodeJS.ProcessEnv>).VITE_PUBLIC
+    }
+
+    if (snapshot.APP_ROOT !== undefined) {
+      process.env.APP_ROOT = snapshot.APP_ROOT
+    } else {
+      delete (process.env as Partial<NodeJS.ProcessEnv>).APP_ROOT
+    }
   }
 
   it('throws when getters are called before init', async () => {

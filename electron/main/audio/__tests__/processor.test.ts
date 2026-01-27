@@ -102,8 +102,7 @@ describe('audio processor', () => {
       created: Date.now(),
       model: 'glm',
     })
-    const getAsrProvider = vi.fn(() => ({ transcribe }))
-
+    const getAsrProvider = vi.fn(() => ({ transcribe }) as any)
     initProcessor({
       getAsrProvider,
       initializeASRProvider: vi.fn(),
@@ -149,7 +148,7 @@ describe('audio processor', () => {
     })
 
     initProcessor({
-      getAsrProvider: () => ({ transcribe }),
+      getAsrProvider: () => ({ transcribe }) as any,
       initializeASRProvider: vi.fn(),
     })
 

@@ -29,7 +29,7 @@ const mockSetLoginItemSettings = vi.hoisted(() => vi.fn())
 const mockGetLoginItemSettings = vi.hoisted(() => vi.fn(() => ({ wasOpenedAsHidden: false })))
 const mockSetName = vi.hoisted(() => vi.fn())
 const mockDockSetIcon = vi.hoisted(() => vi.fn())
-const mockGetAllWindows = vi.hoisted(() => vi.fn(() => []))
+const mockGetAllWindows = vi.hoisted(() => vi.fn((): any[] => []))
 const mockSetApplicationMenu = vi.hoisted(() => vi.fn())
 const mockCreateFromPath = vi.hoisted(() => vi.fn(() => ({})))
 
@@ -54,7 +54,7 @@ const mockCreateTray = vi.hoisted(() => vi.fn())
 const mockRefreshLocalizedUi = vi.hoisted(() => vi.fn())
 const mockCreateBackgroundWindow = vi.hoisted(() => vi.fn())
 const mockCreateSettingsWindow = vi.hoisted(() => vi.fn())
-const mockGetSettingsWindow = vi.hoisted(() => vi.fn(() => null))
+const mockGetSettingsWindow = vi.hoisted(() => vi.fn((): any => null))
 const mockFocusSettingsWindow = vi.hoisted(() => vi.fn())
 
 const mockInitProcessor = vi.hoisted(() => vi.fn())
@@ -291,8 +291,8 @@ describe('main startup', () => {
   })
 
   it('focuses settings window when present on activate', async () => {
-    mockGetAllWindows.mockReturnValueOnce([{}])
-    mockGetSettingsWindow.mockReturnValueOnce({} as object)
+    mockGetAllWindows.mockReturnValueOnce([{} as unknown as Electron.BrowserWindow])
+    mockGetSettingsWindow.mockReturnValueOnce({} as unknown as Electron.BrowserWindow)
     await importMain()
 
     appState.listeners.get('activate')?.()

@@ -102,7 +102,7 @@ describe('logger', () => {
     mockStatSync.mockImplementation(() => ({
       size: Buffer.byteLength(fsState.content),
     }))
-    mockReadSync.mockImplementation((fd, buffer, offset, length, position) => {
+    mockReadSync.mockImplementation((_fd, buffer, offset, length, position) => {
       const data = Buffer.from(fsState.content, 'utf8')
       data.copy(
         buffer as Buffer,
@@ -211,7 +211,8 @@ describe('logger', () => {
 
     writeLog({ level: 'info', message: longMessage, scope: 'main' })
 
-    const logged = scopedLogger.info.mock.calls.at(-1)?.[0] as string
+    const calls = scopedLogger.info.mock.calls
+    const logged = calls[calls.length - 1]?.[0] as string
     expect(logged.length).toBeLessThanOrEqual(LOG_MESSAGE_MAX_LENGTH + 3)
     expect(logged.endsWith('...')).toBe(true)
   })

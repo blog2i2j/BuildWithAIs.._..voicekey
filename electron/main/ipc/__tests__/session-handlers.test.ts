@@ -41,7 +41,7 @@ describe('session-handlers', () => {
       getCurrentSession: vi.fn(() => ({ status: 'recording' })),
     }
 
-    initSessionHandlers(deps)
+    initSessionHandlers(deps as any)
     registerSessionHandlers()
 
     await handlers.get(IPC_CHANNELS.SESSION_START)?.(null)
