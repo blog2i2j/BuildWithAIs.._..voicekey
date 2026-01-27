@@ -12,7 +12,7 @@ export class ElectronTestApp {
 
   async launch() {
     this.app = await electron.launch({
-      executablePath: electronPath,
+      executablePath: electronPath as unknown as string,
       args: [appMainPath],
       env: {
         ...process.env,
