@@ -2,6 +2,19 @@
 
 import type { AppLanguage, LanguageSetting } from './i18n'
 
+/**
+ * 活跃窗口信息
+ * 用于上下文感知的 AI 润色
+ */
+export interface WindowInfo {
+  /** 应用名称（如 "Visual Studio Code"） */
+  appName: string
+  /** 进程名称（如 "Code.exe"） */
+  processName: string
+  /** 操作系统平台 */
+  platform: 'win32' | 'darwin'
+}
+
 export interface VoiceSession {
   id: string
   startTime: Date
@@ -10,6 +23,8 @@ export interface VoiceSession {
   transcription?: string
   error?: string
   duration?: number
+  /** 录音开始时检测到的活跃窗口信息 */
+  windowInfo?: WindowInfo
 }
 
 export interface ASRConfig {

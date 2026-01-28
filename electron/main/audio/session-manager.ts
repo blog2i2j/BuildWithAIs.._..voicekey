@@ -8,7 +8,8 @@
  * @module electron/main/audio/session-manager
  */
 
-import { IPC_CHANNELS, type VoiceSession } from '../../shared/types'
+import { IPC_CHANNELS, type VoiceSession, type WindowInfo } from '../../shared/types'
+import { activeWindowDetector } from '../active-window-detector'
 import { showOverlay, hideOverlay, updateOverlay, showErrorAndHide } from '../window/overlay'
 import { getBackgroundWindow } from '../window/background'
 import { t } from '../i18n'
@@ -51,9 +52,26 @@ export function updateSession(updates: Partial<VoiceSession>): void {
 }
 
 /**
+ * 设置当前会话的窗口信息
+ *
+ * @param windowInfo - 检测到的活跃窗口信息
+ */
+export function setSessionWindowInfo(windowInfo: WindowInfo): void {
+  if (currentSession) {
+    currentSession.windowInfo = windowInfo
+    console.log('[Audio:Session] Window info attached:', {
+      appName: windowInfo.appName,
+      processName: windowInfo.processName,
+      platform: windowInfo.platform,
+    })
+  }
+}
+
+/**
  * 开始录音
  *
  * 创建新的会话并通知后台窗口开始录音
+ * 同时检测当前活跃窗口信息用于上下文感知润色
  */
 export async function handleStartRecording(): Promise<void> {
   const startTimestamp = Date.now()
@@ -69,11 +87,30 @@ export async function handleStartRecording(): Promise<void> {
     // 显示录音状态 HUD
     showOverlay({ status: 'recording' })
 
+    // 检测当前活跃窗口（用于上下文感知润色）
+    let windowInfo: WindowInfo | undefined
+    const detectStartTime = Date.now()
+    const detectionResult = await activeWindowDetector.detect()
+
+    if (detectionResult.success) {
+      windowInfo = detectionResult.info
+      console.log(`[Audio:Session] Active window detected in ${Date.now() - detectStartTime}ms:`, {
+        appName: windowInfo.appName,
+        processName: windowInfo.processName,
+        platform: windowInfo.platform,
+      })
+    } else {
+      console.warn(
+        `[Audio:Session] Failed to detect active window (${detectionResult.reason}), using generic polish mode`,
+      )
+    }
+
     // 创建新会话
     currentSession = {
       id: `session-${Date.now()}`,
       startTime: new Date(),
       status: 'recording',
+      windowInfo,
     }
 
     // 通知后台窗口开始录音

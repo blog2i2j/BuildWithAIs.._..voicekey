@@ -25,6 +25,7 @@ import { convertToMP3 } from './converter'
 import { getCurrentSession, updateSession, clearSession } from './session-manager'
 import type { ASRProvider } from '../asr-provider'
 import type { LLMProvider } from '../llm-provider'
+import type { WindowInfo } from '../../shared/types'
 
 /**
  * 处理器外部依赖
@@ -148,7 +149,10 @@ export async function handleAudioData(buffer: Buffer): Promise<void> {
       const llmStartTime = Date.now()
       try {
         console.log('[Audio:Processor] Polishing transcription with LLM...')
-        const polished = await llmProvider.polishText(transcription.text)
+        // 获取会话中缓存的窗口信息用于上下文感知润色
+        const currentSession = getCurrentSession()
+        const windowInfo: WindowInfo | undefined = currentSession?.windowInfo
+        const polished = await llmProvider.polishText(transcription.text, windowInfo)
         llmDuration = Date.now() - llmStartTime
         llmUsed = true
         finalText = polished.text
