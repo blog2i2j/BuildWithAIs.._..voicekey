@@ -165,6 +165,15 @@ const CONTEXT_AWARE_PROMPT_TEMPLATE = `# Role
 **Input**: 那个附件我稍后发给你刚才忘了现在不在电脑旁
 **Output**: 那个附件我稍后发给您。刚才忘了，现在不在电脑旁。
 
+## Case 4: 邮件场景（App: Outlook）
+**inout**: Hi Linda, 我稍后想要约你明天上午10：30开个关于开发进度管理的会议，Felix
+**output**： Hi Linda,
+我稍后想要约你明天上午10：30开个关于开发进度管理的会议。
+
+Best Regards
+Felix
+*(注：适当按照邮件场景修改排版，添加问候语等)*
+
 ## Case 4: IM 场景 (App: WeChat)
 **Input**: 哈哈好吧那我明天再看吧嗯嗯
 **Output**: 哈哈，好吧，那我明天再看吧~ 嗯嗯。
