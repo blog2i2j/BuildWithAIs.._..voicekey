@@ -89,7 +89,27 @@ export class TextInjector {
       await this.pasteFromClipboard(text)
       return
     }
+    // macOS: 处理换行符，逐行输入并模拟回车键
+    if (process.platform === 'darwin') {
+      await this.typeTextWithNewlinesForMacOS(text)
+      return
+    }
     await keyboard.type(text)
+  }
+
+  /**
+   * macOS 专用：处理包含换行符的文本输入
+   * 将文本按 \n 分割，逐行输入并在行之间按下 Return 键
+   */
+  private async typeTextWithNewlinesForMacOS(text: string): Promise<void> {
+    const lines = text.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+      await keyboard.type(lines[i])
+      // 如果不是最后一行，按下 Return 键换行
+      if (i < lines.length - 1) {
+        await this.pressKey(Key.Return)
+      }
+    }
   }
 
   private captureClipboard(): ClipboardSnapshot {
