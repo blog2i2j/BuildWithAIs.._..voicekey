@@ -58,10 +58,15 @@ export function initializeFfmpeg(): void {
  *
  * @param inputPath - 输入文件路径（WebM 格式）
  * @param outputPath - 输出文件路径（MP3 格式）
+ * @param enhanceAudio - 是否启用低音量增强模式（使用 loudnorm 滤镜）
  * @returns Promise<void> - 转换完成时 resolve
  * @throws {Error} 转换失败时 reject
  */
-export function convertToMP3(inputPath: string, outputPath: string): Promise<void> {
+export function convertToMP3(
+  inputPath: string,
+  outputPath: string,
+  enhanceAudio = false,
+): Promise<void> {
   const conversionStartTime = Date.now()
   return new Promise((resolve, reject) => {
     // 确保 ffmpeg 已初始化
@@ -70,11 +75,25 @@ export function convertToMP3(inputPath: string, outputPath: string): Promise<voi
     console.log(`[Audio:Converter] Converting audio to MP3...`)
     console.log(`[Audio:Converter]   Input: ${inputPath}`)
     console.log(`[Audio:Converter]   Output: ${outputPath}`)
+    console.log(`[Audio:Converter]   Enhance audio: ${enhanceAudio}`)
 
-    ffmpeg(inputPath)
+    const ffmpegCommand = ffmpeg(inputPath)
       .toFormat('mp3')
       .audioCodec('libmp3lame')
       .audioBitrate('128k')
+
+    // 如果启用增强模式，添加 loudnorm 滤镜
+    if (enhanceAudio) {
+      // loudnorm: 标准化音量到广播标准 (-16 LUFS)
+      // 配合 agate 噪声门抑制低音量背景噪音
+      ffmpegCommand.audioFilters([
+        'loudnorm=I=-16:TP=-1.5:LRA=11',
+        'agate=threshold=-35dB:ratio=1.5:attack=5:release=50', // 噪声门，抑制低于 -35dB 的声音
+      ])
+      console.log('[Audio:Converter] Applied audio enhancement filters (loudnorm + agate)')
+    }
+
+    ffmpegCommand
       .on('end', () => {
         const duration = Date.now() - conversionStartTime
         console.log(`[Audio:Converter] ⏱️ Conversion completed in ${duration}ms`)

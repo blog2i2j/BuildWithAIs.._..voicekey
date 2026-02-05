@@ -74,6 +74,8 @@
     "apiKeyHelp": "从这里获取 API Key",
     "apiEndpoint": "API Endpoint（可选）",
     "apiEndpointPlaceholder": "https://open.bigmodel.cn/api/paas/v4/audio/transcriptions",
+    "enhanceAudio": "低音量增强模式",
+    "enhanceAudioHelp": "自动提升录音音量，适合小声说话或远距离录音",
     "asrLanguage": "识别语言",
     "languagePlaceholder": "选择语言",
     "languageChinese": "中文",

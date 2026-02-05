@@ -210,6 +210,7 @@ export default function SettingsPage() {
       config.asr.region !== originalConfig.asr.region ||
       config.asr.endpoint !== originalConfig.asr.endpoint ||
       config.asr.language !== originalConfig.asr.language ||
+      (config.asr.enhanceAudio ?? false) !== (originalConfig.asr.enhanceAudio ?? false) ||
       config.asr.apiKeys.cn !== originalConfig.asr.apiKeys.cn ||
       config.asr.apiKeys.intl !== originalConfig.asr.apiKeys.intl ||
       config.hotkey.pttKey !== originalConfig.hotkey.pttKey ||
@@ -415,6 +416,24 @@ export default function SettingsPage() {
               <AlertTriangle className="h-4 w-4 text-yellow-500" />
               <p className="text-sm text-muted-foreground">{t('settings.durationWarning')}</p>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between space-x-2 pt-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="enhanceAudio">{t('settings.enhanceAudio')}</Label>
+              <p className="text-sm text-muted-foreground">{t('settings.enhanceAudioHelp')}</p>
+            </div>
+            <Switch
+              id="enhanceAudio"
+              checked={config.asr.enhanceAudio ?? false}
+              onCheckedChange={(checked) =>
+                setConfig({
+                  ...config,
+                  asr: { ...config.asr, enhanceAudio: checked },
+                })
+              }
+              className="no-drag cursor-pointer"
+            />
           </div>
         </CardContent>
       </Card>

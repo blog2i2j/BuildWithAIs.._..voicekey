@@ -18,6 +18,7 @@ import { updateOverlay, hideOverlay } from '../window/overlay'
 import { t } from '../i18n'
 import { historyManager } from '../history-manager'
 import { textInjector } from '../text-injector'
+import { configManager } from '../config-manager'
 import { convertToMP3 } from './converter'
 import { getCurrentSession, updateSession, clearSession } from './session-manager'
 import type { ASRProvider } from '../asr-provider'
@@ -81,7 +82,8 @@ export async function handleAudioData(buffer: Buffer): Promise<void> {
 
     // Step 2: 转换为 MP3
     const conversionStartTime = Date.now()
-    await convertToMP3(tempWebmPath, tempMp3Path)
+    const asrConfig = configManager.getASRConfig()
+    await convertToMP3(tempWebmPath, tempMp3Path, asrConfig.enhanceAudio)
     const conversionDuration = Date.now() - conversionStartTime
 
     // 检查取消

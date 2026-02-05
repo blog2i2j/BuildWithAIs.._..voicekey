@@ -25,6 +25,7 @@ const defaultConfig: AppConfig = {
     // apiKey: '',  // Deprecated, removed from default
     endpoint: '',
     language: 'auto',
+    enhanceAudio: false,
   },
   hotkey: {
     pttKey: DEFAULT_HOTKEYS.PTT,

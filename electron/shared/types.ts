@@ -25,6 +25,8 @@ export interface ASRConfig {
 
   endpoint?: string
   language?: string
+  /** 低音量增强模式 - 使用 loudnorm 滤镜提升音量 */
+  enhanceAudio?: boolean
 }
 
 export interface HotkeyConfig {
