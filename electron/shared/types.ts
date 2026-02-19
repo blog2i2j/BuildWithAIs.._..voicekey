@@ -27,6 +27,10 @@ export interface ASRConfig {
   language?: string
 }
 
+export interface LLMRefineConfig {
+  enabled: boolean
+}
+
 export interface HotkeyConfig {
   pttKey: string
   toggleSettings: string
@@ -46,6 +50,7 @@ export interface LanguageSnapshot {
 export interface AppConfig {
   app: AppPreferences
   asr: ASRConfig
+  llmRefine: LLMRefineConfig
   hotkey: HotkeyConfig
 }
 

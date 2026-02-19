@@ -5,6 +5,7 @@
  * - 接收渲染进程发来的音频数据
  * - 转换格式（WebM → MP3）
  * - 调用 ASR 进行语音转写
+ * - 可选调用 LLM 进行文本润色（失败回退原文）
  * - 注入转写文本到活跃窗口
  * - 保存历史记录
  *
@@ -21,6 +22,7 @@ import { textInjector } from '../text-injector'
 import { convertToMP3 } from './converter'
 import { getCurrentSession, updateSession, clearSession } from './session-manager'
 import type { ASRProvider } from '../asr-provider'
+import type { LLMProvider } from '../llm-provider'
 
 /**
  * 处理器外部依赖
@@ -31,6 +33,10 @@ type ProcessorDeps = {
   getAsrProvider: () => ASRProvider | null
   /** 初始化 ASR Provider */
   initializeASRProvider: () => void
+  /** 获取 LLM Provider 实例 */
+  getLlmProvider?: () => LLMProvider | null
+  /** 初始化 LLM Provider */
+  initializeLLMProvider?: () => void
 }
 
 let deps: ProcessorDeps
@@ -51,9 +57,10 @@ export function initProcessor(dependencies: ProcessorDeps): void {
  * 1. 保存 WebM 音频到临时文件
  * 2. 转换为 MP3 格式
  * 3. 调用 ASR 服务进行转写
- * 4. 保存到历史记录
- * 5. 注入文本到活跃窗口
- * 6. 清理临时文件
+ * 4. 调用 LLM 对文本进行润色（失败回退原文）
+ * 5. 保存到历史记录
+ * 6. 注入文本到活跃窗口
+ * 7. 清理临时文件
  *
  * @param buffer - 音频数据 Buffer
  */
@@ -110,6 +117,7 @@ export async function handleAudioData(buffer: Buffer): Promise<void> {
     const asrDuration = Date.now() - asrStartTime
     console.log(`[Audio:Processor] ⏱️ ASR transcription: ${asrDuration}ms`)
     console.log(`[Audio:Processor] Transcription received (length): ${transcription.text.length}`)
+    const rawText = transcription.text
 
     // 检查取消
     if (!getCurrentSession()) {
@@ -118,15 +126,53 @@ export async function handleAudioData(buffer: Buffer): Promise<void> {
       return
     }
 
-    // Step 4: 更新会话状态
+    // Step 4: LLM 润色（失败则回退原文）
+    let finalText = rawText
+    let refineDuration = 0
+    let llmProvider = deps.getLlmProvider?.() ?? null
+    if (!llmProvider && deps.initializeLLMProvider && deps.getLlmProvider) {
+      deps.initializeLLMProvider()
+      llmProvider = deps.getLlmProvider()
+    }
+
+    if (llmProvider?.isEnabled()) {
+      if (llmProvider.hasValidConfig()) {
+        const refineStartTime = Date.now()
+        try {
+          console.log('[Audio:Processor] Refining transcription with LLM...')
+          const refined = await llmProvider.refineText(rawText)
+          refineDuration = Date.now() - refineStartTime
+          if (refined.trim().length > 0) {
+            finalText = refined
+            console.log(`[Audio:Processor] ⏱️ LLM refine: ${refineDuration}ms`)
+          } else {
+            console.warn('[Audio:Processor] LLM returned empty text, using raw transcription')
+          }
+        } catch (error) {
+          refineDuration = Date.now() - refineStartTime
+          console.error('[Audio:Processor] LLM refine failed, using raw transcription:', error)
+        }
+      } else {
+        console.warn('[Audio:Processor] LLM refine enabled but config is incomplete, skipped')
+      }
+    }
+
+    // 检查取消（润色后）
+    if (!getCurrentSession()) {
+      console.log('[Audio:Processor] Session cancelled during refine, aborting')
+      cleanupTempFiles(tempWebmPath, tempMp3Path)
+      return
+    }
+
+    // Step 5: 更新会话状态
     updateSession({
-      transcription: transcription.text,
+      transcription: finalText,
       status: 'completed',
     })
 
-    // Step 5: 保存历史记录
+    // Step 6: 保存历史记录
     historyManager.add({
-      text: transcription.text,
+      text: finalText,
       duration: getCurrentSession()?.duration,
     })
 
@@ -137,18 +183,18 @@ export async function handleAudioData(buffer: Buffer): Promise<void> {
       return
     }
 
-    // Step 6: 注入文本
+    // Step 7: 注入文本
     const injectStartTime = Date.now()
     console.log('[Audio:Processor] Injecting text...')
-    await textInjector.injectText(transcription.text)
+    await textInjector.injectText(finalText)
     const injectDuration = Date.now() - injectStartTime
     console.log(`[Audio:Processor] ⏱️ Text injection: ${injectDuration}ms`)
 
-    // Step 7: 完成
+    // Step 8: 完成
     updateOverlay({ status: 'success' })
     setTimeout(() => hideOverlay(), 800)
 
-    // Step 8: 清理
+    // Step 9: 清理
     const cleanupStartTime = Date.now()
     cleanupTempFiles(tempWebmPath, tempMp3Path)
     const cleanupDuration = Date.now() - cleanupStartTime
@@ -169,6 +215,9 @@ export async function handleAudioData(buffer: Buffer): Promise<void> {
     )
     console.log(
       `[Audio:Processor] ⏱️   - ASR: ${asrDuration}ms (${((asrDuration / overallDuration) * 100).toFixed(1)}%)`,
+    )
+    console.log(
+      `[Audio:Processor] ⏱️   - Refine: ${refineDuration}ms (${((refineDuration / overallDuration) * 100).toFixed(1)}%)`,
     )
     console.log(
       `[Audio:Processor] ⏱️   - Injection: ${injectDuration}ms (${((injectDuration / overallDuration) * 100).toFixed(1)}%)`,

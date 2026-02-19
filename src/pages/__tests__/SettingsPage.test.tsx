@@ -53,6 +53,9 @@ const baseConfig = {
     endpoint: '',
     language: 'auto',
   },
+  llmRefine: {
+    enabled: true,
+  },
   hotkey: { pttKey: 'Command+K', toggleSettings: 'Command+,' },
 }
 
@@ -89,6 +92,7 @@ describe('SettingsPage', () => {
     expect(mockSetConfig.mock.calls[0][0]).toMatchObject({
       app: baseConfig.app,
       asr: baseConfig.asr,
+      llmRefine: baseConfig.llmRefine,
       hotkey: { pttKey: 'Command+J', toggleSettings: 'Command+,' },
     })
     expect(screen.getByText('settings.result.saveSuccess')).toBeInTheDocument()

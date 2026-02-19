@@ -57,6 +57,7 @@ export type IPCHandlersDeps = {
  *       updateAutoLaunchState,
  *       refreshLocalizedUi,
  *       initializeASRProvider,
+ *       initializeLLMProvider,
  *       registerGlobalHotkeys,
  *       getAsrProvider: () => asrProvider,
  *     },

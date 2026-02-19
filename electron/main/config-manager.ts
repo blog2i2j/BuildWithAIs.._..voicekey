@@ -1,11 +1,18 @@
 import Store from 'electron-store'
-import { AppConfig, AppPreferences, ASRConfig, HotkeyConfig } from '../shared/types'
-import { DEFAULT_HOTKEYS } from '../shared/constants'
+import {
+  AppConfig,
+  AppPreferences,
+  ASRConfig,
+  HotkeyConfig,
+  LLMRefineConfig,
+} from '../shared/types'
+import { DEFAULT_HOTKEYS, LLM_REFINE } from '../shared/constants'
 
 // 配置Schema
 interface ConfigSchema {
   app: AppPreferences
   asr: ASRConfig
+  llmRefine: LLMRefineConfig
   hotkey: HotkeyConfig
 }
 
@@ -25,6 +32,9 @@ const defaultConfig: AppConfig = {
     // apiKey: '',  // Deprecated, removed from default
     endpoint: '',
     language: 'auto',
+  },
+  llmRefine: {
+    enabled: LLM_REFINE.ENABLED,
   },
   hotkey: {
     pttKey: DEFAULT_HOTKEYS.PTT,
@@ -64,6 +74,7 @@ export class ConfigManager {
     return {
       app: this.getAppConfig(),
       asr: this.getASRConfig(),
+      llmRefine: this.getLLMRefineConfig(),
       hotkey: this.getHotkeyConfig(),
     }
   }
@@ -97,6 +108,22 @@ export class ConfigManager {
   setASRConfig(config: Partial<ASRConfig>): void {
     const current = this.getASRConfig()
     this.store.set('asr', { ...current, ...config })
+  }
+
+  // 获取 LLM 润色配置
+  getLLMRefineConfig(): LLMRefineConfig {
+    const config = this.store.get('llmRefine', defaultConfig.llmRefine)
+    return {
+      ...defaultConfig.llmRefine,
+      enabled:
+        typeof config.enabled === 'boolean' ? config.enabled : defaultConfig.llmRefine.enabled,
+    }
+  }
+
+  // 设置 LLM 润色配置
+  setLLMRefineConfig(config: Partial<LLMRefineConfig>): void {
+    const current = this.getLLMRefineConfig()
+    this.store.set('llmRefine', { ...current, ...config })
   }
 
   // 获取快捷键配置

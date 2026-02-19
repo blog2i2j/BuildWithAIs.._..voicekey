@@ -43,7 +43,13 @@ const mockT = vi.hoisted(() => vi.fn((key: string) => `t:${key}`))
 
 const mockGetAppConfig = vi.hoisted(() => vi.fn(() => ({ language: 'en', autoLaunch: true })))
 const mockGetASRConfig = vi.hoisted(() => vi.fn(() => ({ region: 'cn', apiKeys: {} })))
+const mockGetLLMRefineConfig = vi.hoisted(() =>
+  vi.fn(() => ({
+    enabled: true,
+  })),
+)
 const mockASRProviderCtor = vi.hoisted(() => vi.fn())
+const mockLLMProviderCtor = vi.hoisted(() => vi.fn())
 
 const mockRegisterGlobalHotkeys = vi.hoisted(() => vi.fn())
 const mockHotkeyUnregisterAll = vi.hoisted(() => vi.fn())
@@ -110,11 +116,16 @@ vi.mock('../config-manager', () => ({
   configManager: {
     getAppConfig: mockGetAppConfig,
     getASRConfig: mockGetASRConfig,
+    getLLMRefineConfig: mockGetLLMRefineConfig,
   },
 }))
 
 vi.mock('../asr-provider', () => ({
   ASRProvider: mockASRProviderCtor,
+}))
+
+vi.mock('../llm-provider', () => ({
+  LLMProvider: mockLLMProviderCtor,
 }))
 
 vi.mock('../hotkey', () => ({
@@ -221,12 +232,24 @@ describe('main startup', () => {
       openAsHidden: true,
     })
     expect(mockASRProviderCtor).toHaveBeenCalledWith({ region: 'cn', apiKeys: {} })
+    expect(mockLLMProviderCtor).toHaveBeenCalledWith(
+      {
+        enabled: true,
+      },
+      {
+        getASRConfig: expect.any(Function),
+      },
+    )
     expect(mockCreateBackgroundWindow).toHaveBeenCalled()
     expect(mockCreateTray).toHaveBeenCalled()
-    expect(mockInitProcessor).toHaveBeenCalledWith({
-      getAsrProvider: expect.any(Function),
-      initializeASRProvider: expect.any(Function),
-    })
+    expect(mockInitProcessor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        getAsrProvider: expect.any(Function),
+        initializeASRProvider: expect.any(Function),
+        getLlmProvider: expect.any(Function),
+        initializeLLMProvider: expect.any(Function),
+      }),
+    )
     expect(mockInitIPCHandlers).toHaveBeenCalledWith(
       expect.objectContaining({
         config: expect.any(Object),

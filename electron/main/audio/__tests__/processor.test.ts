@@ -187,4 +187,84 @@ describe('audio processor', () => {
     expect(mockHideOverlay).toHaveBeenCalled()
     expect(mockUpdateSession).toHaveBeenCalledWith({ status: 'error' })
   })
+
+  it('uses refined text when llm refine succeeds', async () => {
+    const { initProcessor, handleAudioData } = await loadProcessor()
+    const session = {
+      id: 'session-1',
+      startTime: new Date(),
+      status: 'recording',
+      duration: 800,
+    }
+    mockGetCurrentSession.mockReturnValue(session)
+
+    const transcribe = vi.fn().mockResolvedValue({
+      text: 'raw text',
+      id: 't-3',
+      created: Date.now(),
+      model: 'glm',
+    })
+    const refineText = vi.fn().mockResolvedValue('refined text')
+
+    initProcessor({
+      getAsrProvider: () => ({ transcribe }) as any,
+      initializeASRProvider: vi.fn(),
+      getLlmProvider: () =>
+        ({
+          isEnabled: () => true,
+          hasValidConfig: () => true,
+          refineText,
+        }) as any,
+      initializeLLMProvider: vi.fn(),
+    })
+
+    await handleAudioData(Buffer.from('audio'))
+
+    expect(refineText).toHaveBeenCalledWith('raw text')
+    expect(mockHistoryAdd).toHaveBeenCalledWith({
+      text: 'refined text',
+      duration: session.duration,
+    })
+    expect(mockInjectText).toHaveBeenCalledWith('refined text')
+  })
+
+  it('falls back to raw text when llm refine fails', async () => {
+    const { initProcessor, handleAudioData } = await loadProcessor()
+    const session = {
+      id: 'session-1',
+      startTime: new Date(),
+      status: 'recording',
+      duration: 900,
+    }
+    mockGetCurrentSession.mockReturnValue(session)
+
+    const transcribe = vi.fn().mockResolvedValue({
+      text: 'raw text',
+      id: 't-4',
+      created: Date.now(),
+      model: 'glm',
+    })
+    const refineText = vi.fn().mockRejectedValue(new Error('llm down'))
+
+    initProcessor({
+      getAsrProvider: () => ({ transcribe }) as any,
+      initializeASRProvider: vi.fn(),
+      getLlmProvider: () =>
+        ({
+          isEnabled: () => true,
+          hasValidConfig: () => true,
+          refineText,
+        }) as any,
+      initializeLLMProvider: vi.fn(),
+    })
+
+    await handleAudioData(Buffer.from('audio'))
+
+    expect(refineText).toHaveBeenCalledWith('raw text')
+    expect(mockHistoryAdd).toHaveBeenCalledWith({
+      text: 'raw text',
+      duration: session.duration,
+    })
+    expect(mockInjectText).toHaveBeenCalledWith('raw text')
+  })
 })

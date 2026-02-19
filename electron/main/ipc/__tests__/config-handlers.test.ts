@@ -8,6 +8,7 @@ let mockConfigManager: {
   getConfig: ReturnType<typeof vi.fn>
   setAppConfig: ReturnType<typeof vi.fn>
   setASRConfig: ReturnType<typeof vi.fn>
+  setLLMRefineConfig: ReturnType<typeof vi.fn>
   setHotkeyConfig: ReturnType<typeof vi.fn>
 }
 let mockBroadcastLanguageSnapshot: ReturnType<typeof vi.fn>
@@ -43,9 +44,10 @@ const createHandlers = () => {
 
 const setupCommonMocks = () => {
   mockConfigManager = {
-    getConfig: vi.fn(() => ({ app: {}, asr: {}, hotkey: {} })),
+    getConfig: vi.fn(() => ({ app: {}, asr: {}, llmRefine: {}, hotkey: {} })),
     setAppConfig: vi.fn(),
     setASRConfig: vi.fn(),
+    setLLMRefineConfig: vi.fn(),
     setHotkeyConfig: vi.fn(),
   }
   mockBroadcastLanguageSnapshot = vi.fn()
@@ -80,6 +82,7 @@ describe('config-handlers (unit)', () => {
       updateAutoLaunchState: vi.fn(),
       refreshLocalizedUi: vi.fn(),
       initializeASRProvider: vi.fn(),
+      initializeLLMProvider: vi.fn(),
       registerGlobalHotkeys: vi.fn(),
       getAsrProvider: vi.fn(),
     })
@@ -89,7 +92,7 @@ describe('config-handlers (unit)', () => {
     expect(handler).toBeDefined()
     const result = await handler?.(null)
     expect(mockConfigManager.getConfig).toHaveBeenCalled()
-    expect(result).toEqual({ app: {}, asr: {}, hotkey: {} })
+    expect(result).toEqual({ app: {}, asr: {}, llmRefine: {}, hotkey: {} })
   })
 
   it('returns language snapshot on APP_LANGUAGE_GET', async () => {
@@ -101,6 +104,7 @@ describe('config-handlers (unit)', () => {
       updateAutoLaunchState: vi.fn(),
       refreshLocalizedUi: vi.fn(),
       initializeASRProvider: vi.fn(),
+      initializeLLMProvider: vi.fn(),
       registerGlobalHotkeys: vi.fn(),
       getAsrProvider: vi.fn(),
     })
@@ -128,6 +132,7 @@ describe('config-handlers (unit)', () => {
       updateAutoLaunchState,
       refreshLocalizedUi,
       initializeASRProvider: vi.fn(),
+      initializeLLMProvider: vi.fn(),
       registerGlobalHotkeys: vi.fn(),
       getAsrProvider: vi.fn(),
     })
@@ -156,6 +161,7 @@ describe('config-handlers (unit)', () => {
       updateAutoLaunchState: vi.fn(),
       refreshLocalizedUi: vi.fn(),
       initializeASRProvider,
+      initializeLLMProvider: vi.fn(),
       registerGlobalHotkeys: vi.fn(),
       getAsrProvider: vi.fn(),
     })
@@ -165,6 +171,30 @@ describe('config-handlers (unit)', () => {
     await handler?.(null, { asr: { region: 'intl' } })
     expect(mockConfigManager.setASRConfig).toHaveBeenCalledWith({ region: 'intl' })
     expect(initializeASRProvider).toHaveBeenCalled()
+  })
+
+  it('updates LLM refine config and reinitializes provider', async () => {
+    const { ipcMain, handlers } = createHandlers()
+    setupModuleMocks(ipcMain)
+    const { initConfigHandlers, registerConfigHandlers } = await import('../config-handlers')
+
+    const initializeLLMProvider = vi.fn()
+    initConfigHandlers({
+      updateAutoLaunchState: vi.fn(),
+      refreshLocalizedUi: vi.fn(),
+      initializeASRProvider: vi.fn(),
+      initializeLLMProvider,
+      registerGlobalHotkeys: vi.fn(),
+      getAsrProvider: vi.fn(),
+    })
+    registerConfigHandlers()
+
+    const handler = handlers.get(IPC_CHANNELS.CONFIG_SET)
+    await handler?.(null, { llmRefine: { enabled: false } })
+    expect(mockConfigManager.setLLMRefineConfig).toHaveBeenCalledWith({
+      enabled: false,
+    })
+    expect(initializeLLMProvider).toHaveBeenCalled()
   })
 
   it('updates hotkey config and re-registers listeners', async () => {
@@ -177,6 +207,7 @@ describe('config-handlers (unit)', () => {
       updateAutoLaunchState: vi.fn(),
       refreshLocalizedUi: vi.fn(),
       initializeASRProvider: vi.fn(),
+      initializeLLMProvider: vi.fn(),
       registerGlobalHotkeys,
       getAsrProvider: vi.fn(),
     })
@@ -204,6 +235,7 @@ describe('config-handlers (unit)', () => {
       updateAutoLaunchState: vi.fn(),
       refreshLocalizedUi: vi.fn(),
       initializeASRProvider: vi.fn(),
+      initializeLLMProvider: vi.fn(),
       registerGlobalHotkeys: vi.fn(),
       getAsrProvider: vi.fn(),
     })
@@ -239,6 +271,7 @@ describe('config-handlers (ipc invoke)', () => {
       updateAutoLaunchState: vi.fn(),
       refreshLocalizedUi: vi.fn(),
       initializeASRProvider: vi.fn(),
+      initializeLLMProvider: vi.fn(),
       registerGlobalHotkeys: vi.fn(),
       getAsrProvider: vi.fn(),
     })
@@ -246,6 +279,6 @@ describe('config-handlers (ipc invoke)', () => {
 
     const result = await mocked.ipcRenderer.invoke(IPC_CHANNELS.CONFIG_GET)
     expect(mockConfigManager.getConfig).toHaveBeenCalled()
-    expect(result).toEqual({ app: {}, asr: {}, hotkey: {} })
+    expect(result).toEqual({ app: {}, asr: {}, llmRefine: {}, hotkey: {} })
   })
 })

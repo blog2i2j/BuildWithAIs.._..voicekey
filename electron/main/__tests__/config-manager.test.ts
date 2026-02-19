@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { DEFAULT_HOTKEYS } from '../../shared/constants'
+import { DEFAULT_HOTKEYS, LLM_REFINE } from '../../shared/constants'
 
 type StoreData = Record<string, unknown>
 
@@ -94,5 +94,21 @@ describe('ConfigManager', () => {
     const configManager = await createManager()
     configManager.setAppConfig({ autoLaunch: true })
     expect(configManager.getAppConfig().autoLaunch).toBe(true)
+  })
+
+  it('returns default llm refine config', async () => {
+    const configManager = await createManager()
+    const config = configManager.getLLMRefineConfig()
+    expect(config.enabled).toBe(LLM_REFINE.ENABLED)
+  })
+
+  it('persists partial llm refine config', async () => {
+    const configManager = await createManager()
+    configManager.setLLMRefineConfig({
+      enabled: false,
+    })
+    expect(configManager.getLLMRefineConfig()).toMatchObject({
+      enabled: false,
+    })
   })
 })
