@@ -90,13 +90,13 @@ const cleanupOldLogs = async () => {
 }
 
 const configureTransports = () => {
-  log.transports.file.resolvePath = getLogFilePath
+  log.transports.file.resolvePathFn = getLogFilePath
   log.transports.file.maxSize = LOG_FILE_MAX_SIZE_BYTES
   log.transports.file.level = process.env.VITE_DEV_SERVER_URL ? 'debug' : 'info'
   log.transports.file.format = '{y}-{m}-{d} {h}:{i}:{s}.{ms} [{level}] [{scope}] {text}'
   log.transports.console.level = false
 
-  log.transports.file.archiveLog = (oldLogFile) => {
+  log.transports.file.archiveLogFn = (oldLogFile) => {
     const filePath = oldLogFile.path
     const dir = path.dirname(filePath)
     const ext = path.extname(filePath)

@@ -18,11 +18,11 @@ const mockCatchErrors = vi.hoisted(() => vi.fn())
 const mockLog = vi.hoisted(() => ({
   transports: {
     file: {
-      resolvePath: undefined as undefined | (() => string),
+      resolvePathFn: undefined as undefined | (() => string),
       maxSize: 0,
       level: '',
       format: '',
-      archiveLog: undefined as undefined | ((oldLogFile: { path: string }) => void),
+      archiveLogFn: undefined as undefined | ((oldLogFile: { path: string }) => void),
     },
     console: {
       level: '',
@@ -151,7 +151,7 @@ describe('logger', () => {
     expect(mockMkdirSync).toHaveBeenCalledWith('/tmp/logs', { recursive: true })
     expect(mockLog.transports.file.level).toBe('info')
     expect(mockLog.transports.console.level).toBe(false)
-    expect(typeof mockLog.transports.file.resolvePath).toBe('function')
+    expect(typeof mockLog.transports.file.resolvePathFn).toBe('function')
     expect(mockLog.transports.file.maxSize).toBe(LOG_FILE_MAX_SIZE_BYTES)
     expect(mockLog.transports.file.format).toContain('[{level}]')
     expect(mockLog.transports.file.format).toContain('{text}')

@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState } from 'react'
-import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, XCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { type LanguageSetting } from '@electron/shared/i18n'
 import { LOG_FILE_MAX_SIZE_MB, LOG_RETENTION_DAYS } from '@electron/shared/constants'
@@ -37,6 +37,9 @@ export default function SettingsPage() {
       endpoint: '',
       language: 'auto',
     },
+    llmRefine: {
+      enabled: true,
+    },
     hotkey: {
       pttKey: '',
       toggleSettings: '',
@@ -51,6 +54,7 @@ export default function SettingsPage() {
     message: string
   } | null>(null)
   const [saving, setSaving] = useState(false)
+  const [showAsrApiKey, setShowAsrApiKey] = useState(false)
   const [logDialogOpen, setLogDialogOpen] = useState(false)
   const hasLoadedConfig = useRef(false)
   const hasLoadedUpdateStatus = useRef(false)
@@ -62,8 +66,14 @@ export default function SettingsPage() {
     const loadConfig = async () => {
       try {
         const loadedConfig = await window.electronAPI.getConfig()
-        setConfig(loadedConfig)
-        setOriginalConfig(loadedConfig)
+        const normalizedConfig: AppConfig = {
+          ...loadedConfig,
+          llmRefine: {
+            enabled: loadedConfig.llmRefine?.enabled ?? true,
+          },
+        }
+        setConfig(normalizedConfig)
+        setOriginalConfig(normalizedConfig)
       } catch (error) {
         console.error('Failed to load config:', error)
       } finally {
@@ -122,6 +132,7 @@ export default function SettingsPage() {
         ...latestConfig,
         app: config.app,
         asr: config.asr,
+        llmRefine: config.llmRefine,
         hotkey: config.hotkey,
       })
 
@@ -201,6 +212,7 @@ export default function SettingsPage() {
 
   const currentRegion = config.asr.region || 'cn'
   const currentApiKey = config.asr.apiKeys?.[currentRegion] || ''
+  const llmRefineEnabled = config.llmRefine.enabled
 
   const isDirty =
     !!originalConfig &&
@@ -212,6 +224,7 @@ export default function SettingsPage() {
       config.asr.language !== originalConfig.asr.language ||
       config.asr.apiKeys.cn !== originalConfig.asr.apiKeys.cn ||
       config.asr.apiKeys.intl !== originalConfig.asr.apiKeys.intl ||
+      config.llmRefine.enabled !== originalConfig.llmRefine.enabled ||
       config.hotkey.pttKey !== originalConfig.hotkey.pttKey ||
       config.hotkey.toggleSettings !== originalConfig.hotkey.toggleSettings)
 
@@ -371,14 +384,24 @@ export default function SettingsPage() {
             <Label htmlFor="apiKey">
               {t('settings.apiKey')} <span className="text-destructive">*</span>
             </Label>
-            <Input
-              id="apiKey"
-              type="password"
-              value={currentApiKey}
-              onChange={(e) => handleApiKeyChange(e.target.value)}
-              placeholder={t('settings.apiKeyPlaceholder')}
-              className="no-drag"
-            />
+            <div className="relative">
+              <Input
+                id="apiKey"
+                type={showAsrApiKey ? 'text' : 'password'}
+                value={currentApiKey}
+                onChange={(e) => handleApiKeyChange(e.target.value)}
+                placeholder={t('settings.apiKeyPlaceholder')}
+                className="no-drag pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowAsrApiKey((prev) => !prev)}
+                aria-label={showAsrApiKey ? t('settings.hideKey') : t('settings.showKey')}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground no-drag"
+              >
+                {showAsrApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             <p className="text-sm text-muted-foreground mr-1">
               {t('settings.apiKeyHelp')}{' '}
               <a
@@ -415,6 +438,34 @@ export default function SettingsPage() {
               <AlertTriangle className="h-4 w-4 text-yellow-500" />
               <p className="text-sm text-muted-foreground">{t('settings.durationWarning')}</p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{t('settings.llmRefineConfig')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between space-x-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="llmRefineEnabled">{t('settings.llmRefineEnabled')}</Label>
+              <p className="text-sm text-muted-foreground">{t('settings.llmRefineEnabledHelp')}</p>
+            </div>
+            <Switch
+              id="llmRefineEnabled"
+              checked={llmRefineEnabled}
+              onCheckedChange={(checked) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  llmRefine: {
+                    ...prev.llmRefine,
+                    enabled: checked,
+                  },
+                }))
+              }
+              className="no-drag cursor-pointer"
+            />
           </div>
         </CardContent>
       </Card>

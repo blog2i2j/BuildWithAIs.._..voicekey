@@ -3,7 +3,7 @@
  *
  * 负责处理以下 IPC 通道：
  * - CONFIG_GET: 获取全部配置
- * - CONFIG_SET: 设置配置（支持部分更新）
+ * - CONFIG_SET: 设置配置（支持 app/asr/llmRefine/hotkey 部分更新）
  * - CONFIG_TEST: 测试 ASR 连接
  *
  * @module electron/main/ipc/config-handlers
@@ -15,6 +15,7 @@ import {
   type AppPreferences,
   type ASRConfig,
   type HotkeyConfig,
+  type LLMRefineConfig,
 } from '../../shared/types'
 import { configManager } from '../config-manager'
 import { broadcastLanguageSnapshot, getMainLanguageSnapshot, setMainLanguage } from '../i18n'
@@ -33,6 +34,8 @@ export type ConfigHandlersDeps = {
   refreshLocalizedUi: () => void
   /** 重新初始化 ASR Provider */
   initializeASRProvider: () => void
+  /** 重新初始化 LLM Provider */
+  initializeLLMProvider: () => void
   /** 重新注册全局快捷键 */
   registerGlobalHotkeys: () => void
   /** 获取当前 ASR Provider 实例 */
@@ -71,6 +74,7 @@ export function registerConfigHandlers(): void {
       config: {
         app?: Partial<AppPreferences>
         asr?: Partial<ASRConfig>
+        llmRefine?: Partial<LLMRefineConfig>
         hotkey?: Partial<HotkeyConfig>
       },
     ) => {
@@ -88,6 +92,10 @@ export function registerConfigHandlers(): void {
       if (config.asr) {
         configManager.setASRConfig(config.asr)
         deps.initializeASRProvider()
+      }
+      if (config.llmRefine) {
+        configManager.setLLMRefineConfig(config.llmRefine)
+        deps.initializeLLMProvider()
       }
       if (config.hotkey) {
         configManager.setHotkeyConfig(config.hotkey)
