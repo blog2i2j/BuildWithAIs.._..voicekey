@@ -65,6 +65,10 @@ const baseConfig = {
   hotkey: { pttKey: 'Command+K', toggleSettings: 'Command+,' },
 }
 
+async function flushAutoSave() {
+  await new Promise((resolve) => setTimeout(resolve, 800))
+}
+
 describe('SettingsPage', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -73,123 +77,128 @@ describe('SettingsPage', () => {
     assignElectronAPI()
     mockGetConfig.mockResolvedValue(baseConfig)
     mockGetUpdateStatus.mockResolvedValue(null)
+    mockSetConfig.mockResolvedValue(undefined)
   })
 
-  it('loads config and renders fields', async () => {
+  it('loads config without rendering a save button', async () => {
     render(<SettingsPage />)
     await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
+
     expect(screen.getByLabelText('ptt')).toHaveValue('Command+K')
     expect(screen.getByLabelText('toggle')).toHaveValue('Command+,')
-    expect(screen.getByText('settings.saveConfig')).toBeDisabled()
+    expect(screen.queryByText('settings.saveConfig')).not.toBeInTheDocument()
   })
 
-  it('saves config when hotkeys valid and dirty', async () => {
-    mockSetConfig.mockResolvedValue(undefined)
-    render(<SettingsPage />)
-    await waitFor(() => expect(mockGetConfig).toHaveBeenCalledTimes(1))
-
-    fireEvent.change(screen.getByLabelText('ptt'), { target: { value: 'Command+J' } })
-
-    const saveButton = screen.getByText('settings.saveConfig')
-    await waitFor(() => expect(saveButton).toBeEnabled())
-    fireEvent.click(saveButton)
-
-    await waitFor(() => expect(mockSetConfig).toHaveBeenCalled())
-    expect(mockSetConfig.mock.calls[0][0]).toMatchObject({
-      app: baseConfig.app,
-      asr: baseConfig.asr,
-      llmRefine: baseConfig.llmRefine,
-      hotkey: { pttKey: 'Command+J', toggleSettings: 'Command+,' },
-    })
-    expect(screen.getByText('settings.result.saveSuccess')).toBeInTheDocument()
-  })
-
-  it('saves low volume mode switch change', async () => {
-    mockSetConfig.mockResolvedValue(undefined)
+  it('auto-saves ASR changes after debounce', async () => {
     render(<SettingsPage />)
     await waitFor(() => expect(mockGetConfig).toHaveBeenCalledTimes(1))
 
     fireEvent.click(screen.getByRole('switch', { name: 'settings.lowVolumeMode' }))
+    await flushAutoSave()
 
-    const saveButton = screen.getByText('settings.saveConfig')
-    await waitFor(() => expect(saveButton).toBeEnabled())
-    fireEvent.click(saveButton)
-
-    await waitFor(() => expect(mockSetConfig).toHaveBeenCalled())
-    expect(mockSetConfig.mock.calls[0][0]).toMatchObject({
-      asr: {
-        ...baseConfig.asr,
-        lowVolumeMode: false,
-      },
-    })
+    await waitFor(() =>
+      expect(mockSetConfig).toHaveBeenCalledWith({
+        asr: {
+          ...baseConfig.asr,
+          lowVolumeMode: false,
+        },
+      }),
+    )
+    expect(screen.getByTestId('save-status-card')).toHaveTextContent('settings.autoSave.saved')
   })
 
-  it('shows error when hotkeys invalid', async () => {
+  it('auto-saves refine config changes after debounce', async () => {
+    render(<SettingsPage />)
+    await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
+
+    fireEvent.change(screen.getByLabelText(/settings\.refineEndpoint/), {
+      target: { value: 'https://example.com/v1' },
+    })
+    fireEvent.change(screen.getByLabelText(/settings\.refineModel/), {
+      target: { value: 'gpt-4.1-mini' },
+    })
+    fireEvent.change(screen.getByLabelText(/settings\.refineApiKey/), {
+      target: { value: 'refine-key' },
+    })
+
+    await flushAutoSave()
+
+    await waitFor(() =>
+      expect(mockSetConfig).toHaveBeenCalledWith({
+        llmRefine: {
+          enabled: false,
+          endpoint: 'https://example.com/v1',
+          model: 'gpt-4.1-mini',
+          apiKey: 'refine-key',
+        },
+      }),
+    )
+  })
+
+  it('auto-saves valid hotkeys after debounce', async () => {
+    render(<SettingsPage />)
+    await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
+
+    fireEvent.change(screen.getByLabelText('ptt'), { target: { value: 'Command+J' } })
+    await flushAutoSave()
+
+    await waitFor(() =>
+      expect(mockSetConfig).toHaveBeenCalledWith({
+        hotkey: { pttKey: 'Command+J', toggleSettings: 'Command+,' },
+      }),
+    )
+  })
+
+  it('does not auto-save invalid hotkeys and shows inline validation', async () => {
     render(<SettingsPage />)
     await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
 
     fireEvent.change(screen.getByLabelText('toggle'), { target: { value: 'Command+K' } })
-    fireEvent.click(screen.getByText('settings.saveConfig'))
+    await flushAutoSave()
 
     expect(mockSetConfig).not.toHaveBeenCalled()
-    expect(screen.getByText('settings.result.hotkeyInvalid')).toBeInTheDocument()
+    expect(screen.getByTestId('hotkey-validation-status')).toHaveTextContent(
+      'settings.result.hotkeyInvalid',
+    )
+    expect(screen.getByTestId('save-status-card')).toHaveTextContent(
+      'settings.result.hotkeyInvalid',
+    )
   })
 
-  it('requires api key before testing connection', async () => {
-    mockGetConfig.mockResolvedValue({
-      ...baseConfig,
-      asr: { ...baseConfig.asr, apiKeys: { cn: '', intl: '' } },
-    })
+  it('shows refine validation without auto-saving invalid enabled config', async () => {
     render(<SettingsPage />)
     await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
 
-    expect(screen.getByText('settings.testConnection')).toBeDisabled()
+    fireEvent.click(screen.getByRole('switch', { name: 'settings.llmRefineEnabled' }))
+    await flushAutoSave()
+
+    expect(mockSetConfig).not.toHaveBeenCalled()
+    expect(screen.getByTestId('refine-validation-status')).toHaveTextContent(
+      'settings.result.refineConfigRequired',
+    )
   })
 
-  it('tests connection success and failure', async () => {
+  it('tests ASR connection in the ASR section', async () => {
     mockTestConnection.mockResolvedValueOnce(true).mockResolvedValueOnce(false)
     render(<SettingsPage />)
     await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
 
     fireEvent.click(screen.getByText('settings.testConnection'))
-    await waitFor(() =>
-      expect(screen.getByText('settings.result.connectionSuccess')).toBeInTheDocument(),
+    await waitFor(() => expect(mockTestConnection).toHaveBeenCalled())
+    expect(screen.getByTestId('asr-test-status')).toHaveTextContent(
+      'settings.result.connectionSuccess',
     )
 
     fireEvent.click(screen.getByText('settings.testConnection'))
     await waitFor(() =>
-      expect(screen.getByText('settings.result.connectionFailed')).toBeInTheDocument(),
+      expect(screen.getByTestId('asr-test-status')).toHaveTextContent(
+        'settings.result.connectionFailed',
+      ),
     )
+    expect(screen.queryByText('settings.saveConfig')).not.toBeInTheDocument()
   })
 
-  it('tests refine connection for current manual config', async () => {
-    mockTestRefineConnection.mockResolvedValueOnce({ ok: true })
-    mockGetConfig.mockResolvedValue({
-      ...baseConfig,
-      llmRefine: {
-        enabled: true,
-        endpoint: 'https://example.com/v1',
-        model: 'gpt-4.1-mini',
-        apiKey: 'refine-key',
-      },
-    })
-
-    render(<SettingsPage />)
-    await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
-
-    fireEvent.click(screen.getByText('settings.testRefineConnection'))
-
-    await waitFor(() => expect(mockTestRefineConnection).toHaveBeenCalled())
-    expect(mockTestRefineConnection).toHaveBeenCalledWith({
-      enabled: true,
-      endpoint: 'https://example.com/v1',
-      model: 'gpt-4.1-mini',
-      apiKey: 'refine-key',
-    })
-    expect(screen.getByText('settings.result.refineConnectionSuccess')).toBeInTheDocument()
-  })
-
-  it('tests refine connection with unsaved form values', async () => {
+  it('tests refine connection with current form values in place', async () => {
     mockTestRefineConnection.mockResolvedValueOnce({ ok: true })
     render(<SettingsPage />)
     await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
@@ -206,25 +215,48 @@ describe('SettingsPage', () => {
 
     fireEvent.click(screen.getByText('settings.testRefineConnection'))
 
-    await waitFor(() => expect(mockTestRefineConnection).toHaveBeenCalled())
-    expect(mockTestRefineConnection).toHaveBeenCalledWith({
-      enabled: false,
-      endpoint: 'https://example.com/v1',
-      model: 'gpt-4.1-mini',
-      apiKey: 'refine-key',
-    })
+    await waitFor(() =>
+      expect(mockTestRefineConnection).toHaveBeenCalledWith({
+        enabled: false,
+        endpoint: 'https://example.com/v1',
+        model: 'gpt-4.1-mini',
+        apiKey: 'refine-key',
+      }),
+    )
+    expect(screen.getByTestId('refine-test-status')).toHaveTextContent(
+      'settings.result.refineConnectionSuccess',
+    )
   })
 
-  it('blocks saving when refinement is enabled but config is incomplete', async () => {
+  it('shows save failure and retries on the next change', async () => {
+    mockSetConfig.mockRejectedValueOnce(new Error('disk full')).mockResolvedValueOnce(undefined)
     render(<SettingsPage />)
     await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
 
-    fireEvent.click(screen.getByRole('switch', { name: 'settings.llmRefineEnabled' }))
-    fireEvent.change(screen.getByLabelText('ptt'), { target: { value: 'Command+J' } })
-    fireEvent.click(screen.getByText('settings.saveConfig'))
+    fireEvent.click(screen.getByRole('switch', { name: 'settings.lowVolumeMode' }))
+    await flushAutoSave()
 
-    expect(mockSetConfig).not.toHaveBeenCalled()
-    expect(screen.getByText('settings.result.refineConfigRequired')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByTestId('save-status-card')).toHaveTextContent('settings.autoSave.error'),
+    )
+
+    fireEvent.change(screen.getByLabelText('ptt'), { target: { value: 'Command+J' } })
+    await flushAutoSave()
+
+    await waitFor(() =>
+      expect(screen.getByTestId('save-status-card')).toHaveTextContent('settings.autoSave.saved'),
+    )
+    expect(mockSetConfig).toHaveBeenCalledTimes(2)
+  })
+
+  it('saves language changes immediately', async () => {
+    render(<SettingsPage />)
+    await waitFor(() => expect(mockGetConfig).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'settings.appLanguage' }))
+    fireEvent.click(await screen.findByText('settings.languageEnglish'))
+
+    await waitFor(() => expect(mockSetConfig).toHaveBeenCalledWith({ app: { language: 'en' } }))
   })
 
   it('checks update and shows no-update state', async () => {

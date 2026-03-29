@@ -105,6 +105,11 @@
     "testingConnection": "测试中...",
     "saveConfig": "保存设置",
     "savingConfig": "保存中...",
+    "autoSave": {
+      "saving": "正在保存更改...",
+      "saved": "更改已保存",
+      "error": "保存失败：{{message}}"
+    },
     "result": {
       "saveSuccess": "设置已保存！",
       "saveError": "保存失败：{{message}}",
