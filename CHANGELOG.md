@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.11](https://github.com/BuildWithAIs/voicekey/compare/v0.1.10...v0.1.11) (2026-03-29)
+
+### Features
+
+- **audio:** support 3-minute chunked glm asr sessions ([31df453](https://github.com/BuildWithAIs/voicekey/commit/31df4537e22090b7e81310eb033609811fc07d04))
+- improve refine prompt guidance ([633385a](https://github.com/BuildWithAIs/voicekey/commit/633385a0df49fa6ce62deb18fa72fcde055afec8))
+
 ### [0.1.10](https://github.com/BuildWithAIs/voicekey/compare/v0.1.9...v0.1.10) (2026-03-29)
 
 ### Features
