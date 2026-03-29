@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.9](https://github.com/BuildWithAIs/voicekey/compare/v0.1.8...v0.1.9) (2026-03-29)
+
+### Features
+
+- **chart:** enhance localization for chart labels and range selector ([0137700](https://github.com/BuildWithAIs/voicekey/commit/0137700f2e02ecdf0a2744a0c41ad45552734e07))
+- refactor text refinement flow ([b65bae1](https://github.com/BuildWithAIs/voicekey/commit/b65bae1f8f61964353e05a583303fd27d2b8cc31))
+
+### Bug Fixes
+
+- **security:** defer API key encryption migration to after app.ready ([59c173f](https://github.com/BuildWithAIs/voicekey/commit/59c173f47be0a21476eb76f2230f40e7799a5ffd))
+- **security:** encrypt API keys with safeStorage and remove keystroke logging ([1655d6f](https://github.com/BuildWithAIs/voicekey/commit/1655d6f1ad57ef00e270138e1f9f6e3b2da1de24))
+
 ### [0.1.8](https://github.com/BuildWithAIs/voicekey/compare/v0.1.7...v0.1.8) (2026-03-12)
 
 ### Features
