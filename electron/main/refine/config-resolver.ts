@@ -1,6 +1,6 @@
 import { OPENAI_CHAT } from '../../shared/constants'
+import { buildRefineChatEndpoint, normalizeRefineBaseUrl } from '../../shared/refine-url'
 import type { LLMRefineConfig } from '../../shared/types'
-import { normalizeChatEndpoint } from './openai-client'
 
 export interface ResolvedRefineRequestConfig {
   endpoint: string
@@ -15,11 +15,12 @@ export interface ResolvedRefineRequestConfig {
 export function resolveRefineRequestConfig(
   refineConfig: LLMRefineConfig,
 ): ResolvedRefineRequestConfig | null {
-  const endpoint = normalizeChatEndpoint(refineConfig.endpoint)
+  const baseUrl = normalizeRefineBaseUrl(refineConfig.endpoint)
+  const endpoint = buildRefineChatEndpoint(baseUrl)
   const model = refineConfig.model.trim()
   const apiKey = refineConfig.apiKey.trim()
 
-  if (!endpoint || !model || !apiKey) {
+  if (!baseUrl || !endpoint || !model || !apiKey) {
     return null
   }
 

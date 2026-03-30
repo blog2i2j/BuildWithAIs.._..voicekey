@@ -7,6 +7,7 @@ import {
   HotkeyConfig,
   LLMRefineConfig,
 } from '../shared/types'
+import { normalizeRefineBaseUrl } from '../shared/refine-url'
 import { DEFAULT_HOTKEYS, LLM_REFINE } from '../shared/constants'
 
 const ENCRYPTED_PREFIX = 'enc:'
@@ -52,7 +53,7 @@ function normalizeLLMRefineConfig(config?: Partial<LLMRefineConfig>): LLMRefineC
   return {
     ...defaultLLMRefineConfig,
     enabled: typeof config?.enabled === 'boolean' ? config.enabled : defaultLLMRefineConfig.enabled,
-    endpoint: config?.endpoint ?? defaultLLMRefineConfig.endpoint,
+    endpoint: normalizeRefineBaseUrl(config?.endpoint ?? defaultLLMRefineConfig.endpoint),
     model: config?.model ?? defaultLLMRefineConfig.model,
     apiKey: config?.apiKey ?? defaultLLMRefineConfig.apiKey,
   }

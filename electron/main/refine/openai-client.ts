@@ -24,20 +24,6 @@ export type OpenAIResponse = {
   }
 }
 
-export function normalizeChatEndpoint(endpoint: string): string {
-  const trimmed = endpoint.trim()
-  if (!trimmed) {
-    return ''
-  }
-
-  const normalized = trimmed.replace(/\/+$/, '')
-  if (normalized.endsWith('/chat/completions')) {
-    return normalized
-  }
-
-  return `${normalized}/chat/completions`
-}
-
 export async function requestChatCompletion(
   endpoint: string,
   apiKey: string,

@@ -1,12 +1,13 @@
 ﻿import { useEffect, useRef, useState } from 'react'
-import { CheckCircle2, XCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react'
+import { CheckCircle2, XCircle, AlertTriangle, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { type LanguageSetting } from '@electron/shared/i18n'
 import { LOG_FILE_MAX_SIZE_MB, LOG_RETENTION_DAYS, LLM_REFINE } from '@electron/shared/constants'
+import { normalizeRefineBaseUrl } from '@electron/shared/refine-url'
 import type { AppConfig, LLMRefineConfig, UpdateInfo } from '@electron/shared/types'
 import { LogViewerDialog } from '@/components/LogViewerDialog'
 import { HotkeySettings } from '@/components/HotkeySettings'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -44,7 +45,7 @@ function normalizeLLMRefineConfig(config?: Partial<LLMRefineConfig>): LLMRefineC
   return {
     ...defaultLLMRefineConfig,
     enabled: typeof config?.enabled === 'boolean' ? config.enabled : defaultLLMRefineConfig.enabled,
-    endpoint: config?.endpoint ?? defaultLLMRefineConfig.endpoint,
+    endpoint: normalizeRefineBaseUrl(config?.endpoint ?? defaultLLMRefineConfig.endpoint),
     model: config?.model ?? defaultLLMRefineConfig.model,
     apiKey: config?.apiKey ?? defaultLLMRefineConfig.apiKey,
   }
@@ -508,11 +509,13 @@ export default function SettingsPage() {
     key: Exclude<keyof LLMRefineConfig, 'enabled'>,
     value: string,
   ) => {
+    const nextValue = key === 'endpoint' ? normalizeRefineBaseUrl(value) : value
+
     setConfig((prev) => ({
       ...prev,
       llmRefine: {
         ...prev.llmRefine,
-        [key]: value,
+        [key]: nextValue,
       },
     }))
   }
@@ -863,6 +866,13 @@ export default function SettingsPage() {
                 placeholder={t('settings.refineModelPlaceholder')}
                 className="no-drag"
               />
+              <Alert className="border-primary/30 bg-primary/5 [&>svg]:text-primary">
+                <Sparkles className="h-4 w-4" />
+                <AlertTitle>{t('settings.refineModelTipTitle')}</AlertTitle>
+                <AlertDescription className="text-foreground/80">
+                  {t('settings.refineModelHelp')}
+                </AlertDescription>
+              </Alert>
             </div>
 
             <div className="space-y-2">

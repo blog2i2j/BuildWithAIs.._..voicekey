@@ -2,7 +2,6 @@ export { RefineService, type RefineServiceDeps, type TextRefiner } from './servi
 export {
   extractAxiosErrorMessage,
   extractMessageContent,
-  normalizeChatEndpoint,
   requestChatCompletion,
   type OpenAIResponse,
 } from './openai-client'
