@@ -5,4 +5,8 @@ export {
   requestChatCompletion,
   type OpenAIResponse,
 } from './openai-client'
-export { resolveRefineRequestConfig, type ResolvedRefineRequestConfig } from './config-resolver'
+export {
+  resolveRefineRequestConfig,
+  type ResolvedRefineRequestConfig,
+  type ResolveRefineRequestConfigOptions,
+} from './config-resolver'

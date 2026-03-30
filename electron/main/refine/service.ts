@@ -6,12 +6,14 @@ import {
   requestChatCompletion,
 } from './openai-client'
 import { resolveRefineRequestConfig } from './config-resolver'
+import { RefineGlossaryCache } from './glossary-cache'
 
 export interface TextRefiner {
   isEnabled: () => boolean
   hasValidConfig: (configOverride?: LLMRefineConfig) => boolean
   refineText: (input: string) => Promise<string>
   testConnection: (configOverride: LLMRefineConfig) => Promise<RefineConnectionResult>
+  refreshRemoteGlossary: () => Promise<void>
 }
 
 export interface RefineServiceDeps {
@@ -33,9 +35,11 @@ function buildTranscriptUserMessage(input: string): string {
 
 export class RefineService implements TextRefiner {
   private deps: RefineServiceDeps
+  private glossaryCache: RefineGlossaryCache
 
   constructor(deps: RefineServiceDeps) {
     this.deps = deps
+    this.glossaryCache = new RefineGlossaryCache()
   }
 
   isEnabled(): boolean {
@@ -142,7 +146,22 @@ export class RefineService implements TextRefiner {
     }
   }
 
+  async refreshRemoteGlossary(): Promise<void> {
+    try {
+      const glossaryTerms = await this.glossaryCache.refreshFromRemote()
+      console.info(
+        `[RefineService] Remote glossary refreshed successfully with ${glossaryTerms.length} terms`,
+      )
+    } catch (error: unknown) {
+      this.glossaryCache.resetToFallback()
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      console.warn(`[RefineService] Failed to refresh remote glossary, using fallback: ${message}`)
+    }
+  }
+
   private resolveConfig(configOverride?: LLMRefineConfig) {
-    return resolveRefineRequestConfig(configOverride ?? this.deps.getRefineConfig())
+    return resolveRefineRequestConfig(configOverride ?? this.deps.getRefineConfig(), {
+      glossaryTerms: this.glossaryCache.getTerms(),
+    })
   }
 }

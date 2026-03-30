@@ -106,6 +106,11 @@ export const REFINE_GLOSSARY_TERMS = [
   'Voice Key',
 ] as const
 
+export const REFINE_GLOSSARY_REMOTE = {
+  URL: 'https://voicekey.buildwithais.com/refine-glossary.txt',
+  TIMEOUT_MS: 5000,
+} as const
+
 function buildRefineGlossarySection(glossaryTerms: readonly string[]): string {
   const normalizedTerms = Array.from(
     new Set(glossaryTerms.map((term) => term.trim()).filter((term) => term.length > 0)),

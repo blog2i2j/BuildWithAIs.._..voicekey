@@ -12,8 +12,13 @@ export interface ResolvedRefineRequestConfig {
   systemPrompt: string
 }
 
+export interface ResolveRefineRequestConfigOptions {
+  glossaryTerms?: readonly string[]
+}
+
 export function resolveRefineRequestConfig(
   refineConfig: LLMRefineConfig,
+  options: ResolveRefineRequestConfigOptions = {},
 ): ResolvedRefineRequestConfig | null {
   const baseUrl = normalizeRefineBaseUrl(refineConfig.endpoint)
   const endpoint = buildRefineChatEndpoint(baseUrl)
@@ -32,6 +37,7 @@ export function resolveRefineRequestConfig(
     maxTokens: OPENAI_CHAT.MAX_TOKENS,
     temperature: OPENAI_CHAT.TEMPERATURE,
     systemPrompt: buildRefineSystemPrompt({
+      glossaryTerms: options.glossaryTerms,
       translateToEnglish: refineConfig.translateToEnglish,
     }),
   }

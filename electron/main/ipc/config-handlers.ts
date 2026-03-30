@@ -96,7 +96,13 @@ export function registerConfigHandlers(): void {
         deps.initializeASRProvider()
       }
       if (config.llmRefine) {
+        const previousRefineConfig = configManager.getLLMRefineConfig()
         configManager.setLLMRefineConfig(config.llmRefine)
+        const nextRefineConfig = configManager.getLLMRefineConfig()
+        if (!previousRefineConfig.enabled && nextRefineConfig.enabled) {
+          const refineService = deps.getRefineService()
+          void refineService?.refreshRemoteGlossary()
+        }
       }
       if (config.hotkey) {
         configManager.setHotkeyConfig(config.hotkey)

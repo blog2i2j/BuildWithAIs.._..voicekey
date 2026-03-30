@@ -111,6 +111,14 @@ function initializeRefineService() {
   })
 }
 
+function refreshRemoteGlossaryIfEnabled(): void {
+  if (!refineService?.isEnabled()) {
+    return
+  }
+
+  void refineService.refreshRemoteGlossary()
+}
+
 function willRunRefine(): boolean {
   return Boolean(refineService?.isEnabled() && refineService.hasValidConfig())
 }
@@ -158,6 +166,7 @@ app.whenReady().then(async () => {
   // 初始化ASR Provider
   initializeASRProvider()
   initializeRefineService()
+  refreshRemoteGlossaryIfEnabled()
   // 创建后台窗口
   createBackgroundWindow()
   // 创建托盘
