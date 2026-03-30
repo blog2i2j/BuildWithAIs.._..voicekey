@@ -1,5 +1,10 @@
 // Shared constants
 
+type BuildRefineSystemPromptOptions = {
+  glossaryTerms?: readonly string[]
+  translateToEnglish?: boolean
+}
+
 // GLM ASR API defaults and limits
 export const GLM_ASR = {
   ENDPOINT: 'https://open.bigmodel.cn/api/paas/v4/audio/transcriptions',
@@ -61,6 +66,20 @@ Rules:
 - No explanation, no headings unless already implied by the transcript, no code fences, no decorative markdown, no quotes.
 `.trim()
 
+const TRANSLATE_TO_ENGLISH_PROMPT_SECTION = `
+Translation mode override:
+- For this run, output the final refined transcript only in English.
+- Translate the entire transcript into natural English, including mixed-language input.
+- Prioritize accurate meaning-based translation over word-for-word literal translation when needed.
+- Keep the original meaning, tone, intent, order, and formatting structure.
+- Do not include the original-language text in the final output.
+- Except for translating the final output into English, continue following all earlier refinement rules.
+`.trim()
+
+function buildRefineTranslationSection(translateToEnglish: boolean): string {
+  return translateToEnglish ? `\n\n${TRANSLATE_TO_ENGLISH_PROMPT_SECTION}` : ''
+}
+
 // Add rare product- or domain-specific canonical terms here to bias final transcript refinement.
 export const REFINE_GLOSSARY_TERMS = [
   'System Prompt',
@@ -99,10 +118,11 @@ function buildRefineGlossarySection(glossaryTerms: readonly string[]): string {
   return ['', 'Preferred glossary terms:', ...normalizedTerms.map((term) => `- ${term}`)].join('\n')
 }
 
-export function buildRefineSystemPrompt(
-  glossaryTerms: readonly string[] = REFINE_GLOSSARY_TERMS,
-): string {
-  return `${BASE_REFINE_SYSTEM_PROMPT}${buildRefineGlossarySection(glossaryTerms)}`.trim()
+export function buildRefineSystemPrompt({
+  glossaryTerms = REFINE_GLOSSARY_TERMS,
+  translateToEnglish = false,
+}: BuildRefineSystemPromptOptions = {}): string {
+  return `${BASE_REFINE_SYSTEM_PROMPT}${buildRefineTranslationSection(translateToEnglish)}${buildRefineGlossarySection(glossaryTerms)}`.trim()
 }
 
 export const OPENAI_CHAT = {
@@ -117,6 +137,7 @@ export const LLM_REFINE = {
   ENDPOINT: '',
   MODEL: '',
   API_KEY: '',
+  TRANSLATE_TO_ENGLISH: false,
 } as const
 
 const isMac = typeof process !== 'undefined' && process.platform === 'darwin'

@@ -31,6 +31,7 @@ export interface LLMRefineConfig {
   endpoint: string
   model: string
   apiKey: string
+  translateToEnglish: boolean
 }
 
 export interface HotkeyConfig {

@@ -1,4 +1,4 @@
-import { OPENAI_CHAT } from '../../shared/constants'
+import { buildRefineSystemPrompt, OPENAI_CHAT } from '../../shared/constants'
 import { buildRefineChatEndpoint, normalizeRefineBaseUrl } from '../../shared/refine-url'
 import type { LLMRefineConfig } from '../../shared/types'
 
@@ -31,6 +31,8 @@ export function resolveRefineRequestConfig(
     timeoutMs: OPENAI_CHAT.TIMEOUT_MS,
     maxTokens: OPENAI_CHAT.MAX_TOKENS,
     temperature: OPENAI_CHAT.TEMPERATURE,
-    systemPrompt: OPENAI_CHAT.SYSTEM_PROMPT,
+    systemPrompt: buildRefineSystemPrompt({
+      translateToEnglish: refineConfig.translateToEnglish,
+    }),
   }
 }

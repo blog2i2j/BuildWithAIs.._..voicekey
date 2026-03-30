@@ -72,6 +72,8 @@
     "llmRefineEnabled": "Enable refinement",
     "llmRefineEnabledHelp": "Optionally polish transcription text before it is injected.",
     "llmRefineManualHelp": "Enter the Base URL, model, and API key to enable text refinement.",
+    "translateToEnglish": "Translate output to English",
+    "translateToEnglishHelp": "Only applies when refinement is enabled. When turned on, the final refined output is always in English.",
     "refineEndpoint": "Refinement Base URL",
     "refineEndpointPlaceholder": "https://api.openai.com/v1",
     "refineEndpointHelp": "Only the Base URL is needed. Do not include /chat/completions; the app adds that path automatically.",

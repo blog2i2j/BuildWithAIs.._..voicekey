@@ -29,6 +29,7 @@ const defaultLLMRefineConfig: LLMRefineConfig = {
   endpoint: LLM_REFINE.ENDPOINT,
   model: LLM_REFINE.MODEL,
   apiKey: LLM_REFINE.API_KEY,
+  translateToEnglish: LLM_REFINE.TRANSLATE_TO_ENGLISH,
 }
 
 type TestStatus = {
@@ -41,13 +42,35 @@ type SaveStatus = {
   message: string
 } | null
 
+function readTranslateToEnglishFlag(config?: Record<string, unknown>): boolean {
+  if (!config) {
+    return defaultLLMRefineConfig.translateToEnglish
+  }
+
+  if (typeof config.translateToEnglish === 'boolean') {
+    return config.translateToEnglish
+  }
+
+  if (typeof config.translateChineseToEnglish === 'boolean') {
+    return config.translateChineseToEnglish
+  }
+
+  return defaultLLMRefineConfig.translateToEnglish
+}
+
 function normalizeLLMRefineConfig(config?: Partial<LLMRefineConfig>): LLMRefineConfig {
+  const rawConfig =
+    config && typeof config === 'object'
+      ? (config as Partial<LLMRefineConfig> & Record<string, unknown>)
+      : undefined
+
   return {
     ...defaultLLMRefineConfig,
     enabled: typeof config?.enabled === 'boolean' ? config.enabled : defaultLLMRefineConfig.enabled,
     endpoint: normalizeRefineBaseUrl(config?.endpoint ?? defaultLLMRefineConfig.endpoint),
     model: config?.model ?? defaultLLMRefineConfig.model,
     apiKey: config?.apiKey ?? defaultLLMRefineConfig.apiKey,
+    translateToEnglish: readTranslateToEnglishFlag(rawConfig),
   }
 }
 
@@ -76,7 +99,8 @@ function isLlmRefineDirty(current: LLMRefineConfig, original: LLMRefineConfig): 
     current.enabled !== original.enabled ||
     current.endpoint !== original.endpoint ||
     current.model !== original.model ||
-    current.apiKey !== original.apiKey
+    current.apiKey !== original.apiKey ||
+    current.translateToEnglish !== original.translateToEnglish
   )
 }
 
@@ -505,10 +529,7 @@ export default function SettingsPage() {
     }))
   }
 
-  const handleRefineConfigChange = (
-    key: Exclude<keyof LLMRefineConfig, 'enabled'>,
-    value: string,
-  ) => {
+  const handleRefineConfigChange = (key: 'endpoint' | 'model' | 'apiKey', value: string) => {
     const nextValue = key === 'endpoint' ? normalizeRefineBaseUrl(value) : value
 
     setConfig((prev) => ({
@@ -523,7 +544,8 @@ export default function SettingsPage() {
   const currentRegion = config.asr.region || 'cn'
   const currentApiKey = config.asr.apiKeys?.[currentRegion] || ''
   const normalizedLLMRefineConfig = normalizeLLMRefineConfig(config.llmRefine)
-  const llmRefineEnabled = config.llmRefine.enabled
+  const llmRefineEnabled = normalizedLLMRefineConfig.enabled
+  const translateToEnglish = normalizedLLMRefineConfig.translateToEnglish
   const canTestRefine = isRefineConfigComplete(normalizedLLMRefineConfig)
   const hotkeyValidationMessage =
     originalConfig && isHotkeyConfigDirty(config.hotkey, originalConfig.hotkey)
@@ -838,6 +860,30 @@ export default function SettingsPage() {
             </div>
 
             <p className="text-sm text-muted-foreground">{t('settings.llmRefineManualHelp')}</p>
+
+            <div className="flex items-center justify-between space-x-2">
+              <div className="space-y-0.5">
+                <Label htmlFor="translateToEnglish">{t('settings.translateToEnglish')}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('settings.translateToEnglishHelp')}
+                </p>
+              </div>
+              <Switch
+                id="translateToEnglish"
+                checked={translateToEnglish}
+                disabled={!llmRefineEnabled}
+                onCheckedChange={(checked) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    llmRefine: {
+                      ...prev.llmRefine,
+                      translateToEnglish: checked,
+                    },
+                  }))
+                }
+                className="no-drag cursor-pointer disabled:cursor-not-allowed"
+              />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="refineEndpoint">

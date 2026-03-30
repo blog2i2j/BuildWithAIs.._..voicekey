@@ -24,6 +24,23 @@ const defaultLLMRefineConfig: LLMRefineConfig = {
   endpoint: LLM_REFINE.ENDPOINT,
   model: LLM_REFINE.MODEL,
   apiKey: LLM_REFINE.API_KEY,
+  translateToEnglish: LLM_REFINE.TRANSLATE_TO_ENGLISH,
+}
+
+function readTranslateToEnglishFlag(config?: Record<string, unknown>): boolean {
+  if (!config) {
+    return defaultLLMRefineConfig.translateToEnglish
+  }
+
+  if (typeof config.translateToEnglish === 'boolean') {
+    return config.translateToEnglish
+  }
+
+  if (typeof config.translateChineseToEnglish === 'boolean') {
+    return config.translateChineseToEnglish
+  }
+
+  return defaultLLMRefineConfig.translateToEnglish
 }
 
 const defaultConfig: AppConfig = {
@@ -50,12 +67,18 @@ const defaultConfig: AppConfig = {
 }
 
 function normalizeLLMRefineConfig(config?: Partial<LLMRefineConfig>): LLMRefineConfig {
+  const rawConfig =
+    config && typeof config === 'object'
+      ? (config as Partial<LLMRefineConfig> & Record<string, unknown>)
+      : undefined
+
   return {
     ...defaultLLMRefineConfig,
     enabled: typeof config?.enabled === 'boolean' ? config.enabled : defaultLLMRefineConfig.enabled,
     endpoint: normalizeRefineBaseUrl(config?.endpoint ?? defaultLLMRefineConfig.endpoint),
     model: config?.model ?? defaultLLMRefineConfig.model,
     apiKey: config?.apiKey ?? defaultLLMRefineConfig.apiKey,
+    translateToEnglish: readTranslateToEnglishFlag(rawConfig),
   }
 }
 
@@ -99,12 +122,15 @@ function migrateLLMRefineConfig(config: unknown): LLMRefineConfig | null {
     return defaultLLMRefineConfig
   }
 
-  if ('endpoint' in rawConfig || 'model' in rawConfig || 'apiKey' in rawConfig) {
+  if (
+    'endpoint' in rawConfig ||
+    'model' in rawConfig ||
+    'apiKey' in rawConfig ||
+    'enabled' in rawConfig ||
+    'translateToEnglish' in rawConfig ||
+    'translateChineseToEnglish' in rawConfig
+  ) {
     return normalizeLLMRefineConfig(rawConfig as Partial<LLMRefineConfig>)
-  }
-
-  if ('enabled' in rawConfig) {
-    return defaultLLMRefineConfig
   }
 
   return null
