@@ -132,8 +132,6 @@ export function buildRefineSystemPrompt({
 
 export const OPENAI_CHAT = {
   TIMEOUT_MS: 30000,
-  MAX_TOKENS: 4096,
-  TEMPERATURE: 0.2,
   SYSTEM_PROMPT: buildRefineSystemPrompt(),
 } as const
 

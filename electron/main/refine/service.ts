@@ -73,8 +73,6 @@ export class RefineService implements TextRefiner {
           content: buildTranscriptUserMessage(input),
         },
       ],
-      max_tokens: resolvedConfig.maxTokens,
-      temperature: resolvedConfig.temperature,
     }
 
     try {
@@ -124,8 +122,6 @@ export class RefineService implements TextRefiner {
               content: buildTranscriptUserMessage(TEST_CONNECTION_TRANSCRIPT),
             },
           ],
-          max_tokens: 1,
-          temperature: 0,
         },
         resolvedConfig.timeoutMs,
       )

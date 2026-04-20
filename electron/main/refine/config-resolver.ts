@@ -7,8 +7,6 @@ export interface ResolvedRefineRequestConfig {
   apiKey: string
   model: string
   timeoutMs: number
-  maxTokens: number
-  temperature: number
   systemPrompt: string
 }
 
@@ -34,8 +32,6 @@ export function resolveRefineRequestConfig(
     model,
     apiKey,
     timeoutMs: OPENAI_CHAT.TIMEOUT_MS,
-    maxTokens: OPENAI_CHAT.MAX_TOKENS,
-    temperature: OPENAI_CHAT.TEMPERATURE,
     systemPrompt: buildRefineSystemPrompt({
       glossaryTerms: options.glossaryTerms,
       translateToEnglish: refineConfig.translateToEnglish,
